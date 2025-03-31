@@ -22,9 +22,11 @@ class Uploader(Base):
     __tablename__ = "uploaders"
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    source_id = Column(String, unique=True, nullable=False)  # External ID (e.g., YouTube ID)
+    source_id = Column(String, unique=True, nullable=True)  # External ID (e.g., YouTube ID)
     name = Column(String, nullable=False)
-    url = Column(String, nullable=False)
+    url = Column(String, nullable=True)  # Uploader URL (e.g., YouTube channel URL)
+    channel_id = Column(String, unique=True, nullable=False)  # Uploader ID (e.g., YouTube channel ID)
+    channel_url = Column(String, nullable=False)
 
     # Relationships with Videos and Playlists
     videos = relationship("Video", back_populates="uploader")
@@ -40,7 +42,7 @@ class Item(Base):
     description = Column(String, nullable=True)
     thumbnail = Column(String, nullable=True)
     upload_date = Column(String, nullable=True)
-    folder = Column(String, nullable=False)  # Default storage folder
+    folder = Column(String, default="/download")  # Default storage folder
 
     @declared_attr
     def __tablename__(cls):
