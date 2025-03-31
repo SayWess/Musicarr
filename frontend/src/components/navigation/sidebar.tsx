@@ -25,7 +25,7 @@ export default function Sidebar() {
   return (
     <div className="bg-gray-900 text-white shadow-lg transition-all duration-300">
       {/* Desktop Layout */}
-      <div className={`hidden md:flex md:flex-col md:h-screen bg-gray-900 text-white shadow-lg transition-all duration-300 ${`${collapsed ? "md:w-20" : "md:w-60"} flex flex-col p-4`}`}>
+      <div className={`hidden md:flex md:flex-col md:min-h-screen bg-gray-900 text-white shadow-lg transition-all duration-300 ${`${collapsed ? "md:w-20" : "md:w-60"} flex flex-col p-4`}`}>
         <div className="flex items-center justify-between mb-6">
           <Image src="/icon.webp" alt="Musicarr Logo" width={40} height={40} className="rounded-full" />
           <button
