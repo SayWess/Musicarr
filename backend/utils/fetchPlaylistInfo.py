@@ -23,11 +23,14 @@ async def fetch_playlist_info(playlist_url):
             # "--flat-playlist",  # Ne pas télécharger, juste lister les vidéos
             # "--skip-download",  # Ne pas télécharger les vidéos
             "-J",  # Sortie en JSON, dump toutes les infos
+            "-i",
+            # "--no-warnings",
+            # "--ignore-no-formats-error",
             playlist_url
         ]
         # print("Command:", command)
+        print("Starting yt-dlp command...")
 
-        # Exécuter la commande yt-dlp et récupérer la sortie
         process = await asyncio.create_subprocess_exec(
             *command,
             stdout=asyncio.subprocess.PIPE,
@@ -65,6 +68,7 @@ async def fetch_and_store_playlist_info(playlist_url, db: AsyncSession):
     # Step 1: Fetch playlist info using yt-dlp (can use your existing method)
     playlist_info = await fetch_playlist_info(playlist_url)
     if not playlist_info:
+        print("Failed to fetch playlist info.")
         return False
 
     # Step 2: Check if the uploader exists or create a new uploader
@@ -72,10 +76,6 @@ async def fetch_and_store_playlist_info(playlist_url, db: AsyncSession):
         select(Uploader).filter(Uploader.channel_id == playlist_info.get("channel_id"))
     )
     uploader = result.scalars().first()  # Extract single result
-    if uploader:
-        print(uploader.id)
-
-    print(playlist_info.get("channel_id"))
 
     if not uploader:
         # Create a new uploader if not found
@@ -192,5 +192,5 @@ async def fetch_and_store_playlist_info(playlist_url, db: AsyncSession):
     # Step 6: Commit all PlaylistVideo entries
     await db.commit()
 
-    return True
+    return playlist.title
 

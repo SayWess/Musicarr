@@ -1,6 +1,5 @@
-from fastapi import FastAPI, Depends, WebSocket, WebSocketDisconnect, HTTPException, BackgroundTasks
+from fastapi import FastAPI, Depends, WebSocket, WebSocketDisconnect, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from contextlib import asynccontextmanager
 import asyncio
 import re
 
@@ -14,7 +13,6 @@ from database.models import DownloadState, Playlist, Video, Uploader, PlaylistVi
 from utils.fetchPlaylistInfo import fetch_and_store_playlist_info
 
 app = FastAPI()
-# datastore = DataStore()
 
 # Function to dynamically allow 192.168.*.* IPs
 def allow_origin(origin: str) -> bool:
@@ -33,84 +31,77 @@ app.add_middleware(
 # Stockage des connexions WebSocket
 active_connections = {}
 
-# Gérer les connexions WebSocket
-@app.websocket("/ws/playlists/{playlist_id}")
-async def websocket_endpoint(websocket: WebSocket, playlist_id: str):
-    # print(f"WebSocket connection established for playlist {playlist_id}", websocket.headers)
+@app.websocket("/ws/playlists")
+async def websocket_endpoint(websocket: WebSocket):
     await websocket.accept()
-    if playlist_id not in active_connections:
-        active_connections[playlist_id] = []
-    active_connections[playlist_id].append(websocket)
+    # if "playlists" not in active_connections:
+    #     active_connections["playlists"] = []
+    active_connections["playlists"] = websocket
 
     print(active_connections)
-    
+
     try:
         while True:
             await websocket.receive_text()  # Attendre un message (optionnel)
     except WebSocketDisconnect:
-        active_connections[playlist_id].remove(websocket)
+        # active_connections["playlists"].remove(websocket)
+        active_connections.pop("playlists", None)
+        print("WebSocket disconnected")
 
+# Gérer les connexions WebSocket
+# @app.websocket("/ws/playlists/{playlist_id}")
+# async def websocket_endpoint(websocket: WebSocket, playlist_id: str):
+#     # print(f"WebSocket connection established for playlist {playlist_id}", websocket.headers)
+#     await websocket.accept()
+#     if playlist_id not in active_connections:
+#         active_connections[playlist_id] = []
+#     active_connections[playlist_id].append(websocket)
 
-# Fonction de téléchargement (simulation avec progressions)
-# async def download_videos(playlist_id: str):
-#     if playlist_id not in datastore.playlists:
-#         return
+#     print(active_connections)
     
-#     for video_id, video in datastore.playlists[playlist_id]["videos"]:
-#         if video["state"] in [DownloadState.IDLE, DownloadState.ERROR]:
-#             video["state"] = DownloadState.DOWNLOADING
-#             video["progress"] = 0
-#         for progress in range(0, 101, 10):  # Simulation de la progression
-#             video["progress"] = progress
-#             if playlist_id in active_connections:
-#                 for ws in active_connections[playlist_id]:
-#                     await ws.send_json({"video_id": video["id"], "progress": progress})
-#             await asyncio.sleep(1)  # Simule le téléchargement
-        
-#         video["downloaded"] = True
-    
-#     # Envoyer un message final une fois terminé
-#     if playlist_id in active_connections:
-#         for ws in active_connections[playlist_id]:
-#             await ws.send_json({"message": "Download all videos complete"})
+#     try:
+#         while True:
+#             await websocket.receive_text()  # Attendre un message (optionnel)
+#     except WebSocketDisconnect:
+#         active_connections[playlist_id].remove(websocket)
 
-# async def download_video(playlist_id: str, video_id: str):
-#     if playlist_id not in datastore.playlists:
-#         return
-    
 
-#     video = datastore.playlists[playlist_id]["videos"].get(video_id)
-#     if not video:
-#         return
-    
-#     for progress in range(0, 101, 10):  # Simulation de la progression
-#         video["progress"] = progress
-#         if playlist_id in active_connections:
-#             for ws in active_connections[playlist_id]:
-#                 await ws.send_json({"video_id": video["id"], "progress": progress})
-#         await asyncio.sleep(1)  # Simule le téléchargement
-            
-#     video["downloaded"] = True
-#     # Envoyer un message final une fois terminé
-#     if playlist_id in active_connections:
-#         for ws in active_connections[playlist_id]:
-#             await ws.send_json({"video_id": video["id"], "message": "Download video complete"})
-#     return
-
+fetching = {}
 
 from database.database import SessionLocal
 
-async def fetch_full_playlist(playlist_id: str):
+async def fetch_full_playlist(playlist_id: str, playlist_title: str = None):
     """Fetch full playlist info in the background."""
     print(f"Fetching full playlist info for {playlist_id}...")
-    async with SessionLocal() as db:
-        await fetch_and_store_playlist_info(playlist_id, db)
+    # Check if already fetching
+    if playlist_id in fetching:
+        print(f"Already fetching playlist {playlist_id}.")
+        return
     
-    print(f"Fetched full playlist info for {playlist_id}.")
+    fetching[playlist_id] = True
 
-    if playlist_id in active_connections:
-        for ws in active_connections[playlist_id]:
-            await ws.send_json({"message": "Playlist updated"})
+    async with SessionLocal() as db:
+        try: 
+            # Fetch and store playlist info
+            print(f"Fetching playlist info for {playlist_id}...")
+            result = await fetch_and_store_playlist_info(playlist_id, db)
+        except Exception as e:
+            print(f"Error fetching playlist info: {e}")
+            result = None
+        finally:
+            fetching.pop(playlist_id, None)
+    
+    if not result:
+        print(f"Failed to fetch playlist info for {playlist_id}.")
+        if "playlists" in active_connections:
+            # for ws in :
+            await active_connections["playlists"].send_json({"playlist_id": playlist_id, "fetch_success": False, "playlist_title": playlist_title, "message": "Failed to fetch playlist info" })
+    else:
+        print(f"Fetched full playlist info for {playlist_id}.")
+
+        if "playlists" in active_connections:
+            # for ws in active_connections["playlists"]:
+            await active_connections["playlists"].send_json({"playlist_id": playlist_id, "fetch_success": True, "playlist_title": result, "message": "Fetched full playlist info" })
 
 
 
@@ -196,7 +187,7 @@ async def add_playlist(playlist_id: str, db: AsyncSession = Depends(get_db)):
     # Create a new playlist instance
     new_playlist = Playlist(
         source_id=playlist_id,
-        title="Fetching playlist...",
+        title="Fetching playlist " + playlist_id,
     )
 
     # Add the new playlist to the database
@@ -227,6 +218,32 @@ async def delete_playlist(playlist_id: str, db: AsyncSession = Depends(get_db)):
     await db.commit()
 
     return {"message": "Playlist deleted"}
+
+@app.post("/api/playlists/{playlist_id}/refresh")
+async def refresh_playlist(playlist_id: str, db: AsyncSession = Depends(get_db)):
+    """
+    Récupérer les vidéos d'une playlist par son ID
+    """
+    result = await db.execute(select(Playlist).where(Playlist.source_id == playlist_id))
+    playlist = result.scalars().first()
+    
+    if not playlist:
+        raise HTTPException(status_code=404, detail="Playlist not found")
+
+    # Start the refresh process
+    asyncio.create_task(fetch_full_playlist(playlist_id, playlist.title))
+
+    return {"message": "Refresh started", "playlist_id": playlist_id}
+
+@app.get("/api/playlists/{playlist_id}/is_fetching")
+async def is_fetching_playlist(playlist_id: str):
+    """
+    Vérifier si une playlist est en cours de téléchargement
+    """
+    if playlist_id in fetching:
+        return {"message": "Playlist is being fetched", "is_fetching": True}
+    else:
+        return {"message": "Playlist is not being fetched", "is_fetching": False}
 
 @app.post("/api/playlists/{playlist_id}/download")
 async def start_playlist_download(playlist_id: str, db: AsyncSession = Depends(get_db)):
