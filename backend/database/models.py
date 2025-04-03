@@ -64,7 +64,7 @@ class Playlist(Item):
     uploader_id = Column(UUID(as_uuid=True), ForeignKey("uploaders.id"), nullable=True)
     uploader = relationship("Uploader", back_populates="playlists")
 
-    videos = relationship("PlaylistVideo", back_populates="playlist")
+    videos = relationship("PlaylistVideo", back_populates="playlist", cascade="all, delete-orphan")
 
 # Video Model
 class Video(Item):
@@ -84,7 +84,7 @@ class PlaylistVideo(Base):
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     
-    playlist_id = Column(UUID(as_uuid=True), ForeignKey("playlists.id"), nullable=False)
+    playlist_id = Column(UUID(as_uuid=True), ForeignKey("playlists.id", ondelete="CASCADE"), nullable=False)
     video_id = Column(UUID(as_uuid=True), ForeignKey("videos.id"), nullable=False)
 
     state = Column(Enum(DownloadState), default=DownloadState.IDLE)
@@ -98,5 +98,5 @@ class PlaylistVideo(Base):
     custom_title = Column(String, nullable=True)  # Allows renaming per playlist
     custom_folder = Column(String, nullable=True)  # Allows different storage locations
 
-    playlist = relationship("Playlist", back_populates="videos")
+    playlist = relationship("Playlist", back_populates="videos", passive_deletes=True)
     video = relationship("Video", back_populates="playlists")
