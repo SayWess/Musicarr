@@ -5,17 +5,18 @@ import { Plus, Loader2, Download, X } from "lucide-react";
 import axios from "axios";
 import { endpointApi } from "@/constants/endpoints";
 import { extractYouTubeId } from "@/utils/extractYouTubeId";
-import { useWebSocket } from "@/hooks/useWebSocket";
 import { mutate } from "swr";
-import { endpointWebSocket } from "@/constants/endpoints";
 import { toast } from "sonner";
+
 
 const AddItem = () => {
   const [url, setUrl] = useState("");
   const [loading, setLoading] = useState(false);
   const [open, setOpen] = useState(false);
-  const { connect, disconnect } = useWebSocket();
-
+  // const { connect, disconnect, isConnected } = useWebSocket();
+  const actuelRoute = window.location.pathname;
+  const itemType = actuelRoute.includes("playlists") ? "Playlist" : "Video";
+  
   const handleDataFetch = async () => {
     if (!url.trim()) return;
 
@@ -34,24 +35,16 @@ const AddItem = () => {
       );
 
       if (response.data.error) {
-        toast.error("Playlist already exists!");
+        toast.error(`${itemType} already exists!`);
+        setLoading(false);
         return;
       }
 
-      console.log("Data fetched:", response.data);
       mutate(`${endpointApi}/${extracted.type}`);
-      console.log("Playlist added:", response.data);
 
-      toast.success(
-        `Playlist added! Fetching data for ${extracted.type}: ${extracted.id}`
-      );
+      toast.info(`Fetching data for ${extracted.type.substring(0, -1)}: ${extracted.id}`)
+      toast.success(`${itemType} added!`);
 
-      connect(`${endpointWebSocket}/${extracted.type}/${extracted.id}`, (data) => {
-        if (data.message === "Playlist updated") {
-          mutate(`${endpointApi}/${extracted.type}`);
-          disconnect();
-        }
-      });
     } catch (error) {
       console.error("Error fetching data:", error);
       toast.error("Failed to fetch data.");
@@ -85,7 +78,7 @@ const AddItem = () => {
               <X size={24} className="text-gray-400 hover:text-white" />
             </button>
 
-            <h2 className="text-xl font-bold mb-4">Add Video / Playlist</h2>
+            <h2 className="text-xl font-bold mb-4">Add {itemType}</h2>
 
             <input
               type="url"
@@ -106,7 +99,7 @@ const AddItem = () => {
               ) : (
                 <Download size={20} />
               )}
-              <span className="ml-2">Fetch Data</span>
+              <span className="ml-2">Add item</span>
             </button>
           </div>
         </div>

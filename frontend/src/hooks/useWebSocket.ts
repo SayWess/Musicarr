@@ -1,57 +1,52 @@
 import { useEffect, useRef } from "react";
 
-const MAX_RETRIES = 5; // Maximum reconnection attempts
+interface WebSocketInstance {
+  socket: WebSocket;
+  listeners: Map<string, (data: any) => void>; // Use a map for multiple listeners
+}
 
-export function useWebSocket() {
-  const socketRef = useRef<WebSocket | null>(null);
-  const retryCount = useRef(0);
+const wsInstances: Record<string, WebSocketInstance> = {};
 
-  const connect = (url: string, onMessage: (data: any) => void) => {
-    if (socketRef.current) return;
-
-    if (!url.startsWith("ws://") && !url.startsWith("wss://")) {
-      console.error(`Invalid WebSocket URL: ${url}`);
-      return;
-    }
-
-    console.log(`Connecting to WebSocket: ${url} (Attempt ${retryCount.current + 1})`);
-    socketRef.current = new WebSocket(url);
-
-    socketRef.current.onmessage = (event) => {
-      try {
-        const data = JSON.parse(event.data);
-        onMessage(data);
-      } catch (error) {
-        console.error("WebSocket message parsing error:", error);
-      }
-    };
-
-    socketRef.current.onclose = (event) => {
-      console.warn(`WebSocket closed (code: ${event.code})`);
-      socketRef.current = null;
-
-      if (!event.wasClean && retryCount.current < MAX_RETRIES) {
-        retryCount.current += 1;
-        const delay = Math.min(1000 * retryCount.current, 5000); // Exponential backoff (max 5s)
-
-        console.log(`Attempting to reconnect in ${delay / 1000} seconds...`);
-        setTimeout(() => connect(url, onMessage), delay);
-      }
-    };
-  };
-
-  const disconnect = () => {
-    if (socketRef.current) {
-      console.log("Closing WebSocket connection.");
-      socketRef.current.close();
-      socketRef.current = null;
-      retryCount.current = 0; // Reset retry count on manual disconnect
-    }
-  };
+export function useWebSocket(url: string, onMessage: (data: any) => void, key: string) {
+  const listenerRef = useRef<(data: any) => void>(() => {});
+  
+  useEffect(() => {
+    listenerRef.current = onMessage;
+  }, [onMessage]);
 
   useEffect(() => {
-    return () => disconnect(); // Cleanup on unmount
-  }, []);
+    let instance = wsInstances[url];
 
-  return { connect, disconnect };
+    if (!instance) {
+      console.log(`Creating WebSocket for: ${url}`);
+      const socket = new WebSocket(url);
+
+      instance = { socket, listeners: new Map() };
+      wsInstances[url] = instance;
+
+      socket.onmessage = (event) => {
+        try {
+          const data = JSON.parse(event.data);
+          instance.listeners.forEach((listener) => listener(data));
+        } catch (error) {
+          console.error("WebSocket message error:", error);
+        }
+      };
+
+      socket.onclose = () => {
+        console.log(`WebSocket closed: ${url}`);
+        delete wsInstances[url];
+      };
+    }
+
+    instance.listeners.set(key, listenerRef.current);
+
+    return () => {
+      instance.listeners.delete(key);
+      if (instance.listeners.size === 0) {
+        instance.socket.close();
+        delete wsInstances[url];
+      }
+    };
+  }, [url, key]); // Depend on key to prevent duplicate hooks
 }

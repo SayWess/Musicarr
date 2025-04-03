@@ -2,6 +2,7 @@
 import Sidebar from "@/components/navigation/sidebar";
 import { ReactNode } from "react";
 import { Toaster } from "sonner";
+import { useGlobalWebSocket } from "@/hooks/useGlobalWebSocket";
 
 
 interface ClientLayoutProps {
@@ -9,6 +10,10 @@ interface ClientLayoutProps {
 }
 
 export default function ClientLayout({ children }: ClientLayoutProps) {
+  // Initializing WebSocket connection for playlists
+  // This will allow us to listen for real-time updates related to playlists
+  useGlobalWebSocket();
+
   return (
     <div className="flex min-h-screen">
       <Sidebar /> {/* Sidebar Navigation, at bottom screen for mobile */}
