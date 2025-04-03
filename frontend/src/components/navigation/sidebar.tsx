@@ -14,7 +14,7 @@ const navItems = [
 
 export default function Sidebar() {
   const pathname = usePathname();
-  const [collapsed, setCollapsed] = useState(false);
+  const [collapsed, setCollapsed] = useState(true);
 
   // Adjusts highlighting for playlist detail pages
   const isActive = (href: string) => {

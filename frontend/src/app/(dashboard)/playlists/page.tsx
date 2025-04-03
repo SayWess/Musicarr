@@ -5,9 +5,9 @@ import usePlaylists from "@/hooks/usePlaylists";
 import { Playlist } from "@/types/models";
 import AddItem from "@/components/AddItem";
 
+
 export default function Playlists() {
   const { playlists, isLoading, isError } = usePlaylists();
-
 
   if (isLoading) {
     return (
@@ -38,11 +38,19 @@ export default function Playlists() {
 
       <AddItem />
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {playlists?.map((playlist: Playlist) => (
+      <div className="" style={styles.grid}>
+        {playlists.map((playlist: Playlist) => (
           <PlaylistItem key={playlist.id} playlist={playlist} />
         ))}
       </div>
     </div>
   );
+}
+
+const styles = {
+  grid: {
+    display: "grid",
+    gridTemplateColumns: "repeat(auto-fill, minmax(225px, 1fr))",
+    gap: "1.5rem",
+  },
 }
