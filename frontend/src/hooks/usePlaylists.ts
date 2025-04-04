@@ -1,7 +1,6 @@
 import axios from "axios";
 import useSWR, { mutate } from "swr";
-import { Playlist, Video } from "@/types/models";
-import { useState } from "react";
+import { Playlist } from "@/types/models";
 import { endpointPlaylists } from "@/constants/endpoints";
 
 const usePlaylists = () => {
