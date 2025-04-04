@@ -284,6 +284,7 @@ async def get_playlist_details(playlist_id: str, db: AsyncSession = Depends(get_
     )
     videos = videos_result.scalars().all()
 
+
     return {
         "id": playlist.source_id,
         "title": playlist.title,
@@ -291,6 +292,9 @@ async def get_playlist_details(playlist_id: str, db: AsyncSession = Depends(get_
         "last_published": playlist.last_published,
         "thumbnail": playlist.thumbnail,
         "check_every_day": playlist.check_every_day,
+        "default_format": playlist.default_format,
+        "default_quality": playlist.default_quality,
+        "default_subtitles": playlist.default_subtitles,
         "uploader": {
             "id": playlist.uploader.id if playlist.uploader else None,
             "name": playlist.uploader.name if playlist.uploader else "Unknown",
@@ -307,9 +311,6 @@ async def get_playlist_details(playlist_id: str, db: AsyncSession = Depends(get_
             for video in videos
         ]
     }
-
-
-
 
 @app.get("/api/playlists/{playlist_id}/videos")
 async def get_playlist_videos(playlist_id: str, db: AsyncSession = Depends(get_db)):
@@ -434,5 +435,3 @@ async def add_video(video_id: str, db: AsyncSession = Depends(get_db)):
     # Start background task to fetch full video details
     asyncio.create_task(fetch_full_video(video_id))
     return {"message": "Video added", "video": video}
-
-
