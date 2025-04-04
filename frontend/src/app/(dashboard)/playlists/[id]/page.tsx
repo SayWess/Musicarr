@@ -3,8 +3,8 @@
 import Image from "next/image";
 import { useRouter, useParams } from "next/navigation";
 import useSWR from "swr";
-import { ArrowLeft, Pencil, Trash, Calendar, User } from "lucide-react";
-import { PlaylistDetails, VideoDetails } from "@/types/models";
+import { Calendar, User, Video, Download, Film, Captions, ArrowLeft } from "lucide-react";
+import { PlaylistDetails, VideoDetails, DownloadQuality } from "@/types/models";
 import axios from "axios";
 import {
   endpointPlaylists,
@@ -12,12 +12,12 @@ import {
 } from "@/constants/endpoints";
 import useDownloadProgress from "@/hooks/useDownloadProgress";
 import { VideoItem } from "@/components/VideoItem";
-import { RefreshCw } from "lucide-react";
 import { toast } from "sonner";
 import { useWebSocket } from "@/hooks/useWebSocket";
 import { useState } from "react";
 import { useEffect } from "react";
 import InteractiveButtons from "@/components/playlists/InteractiveButtons";
+
 
 const fetcher = (url: string) => axios.get(url).then((res) => res.data);
 
@@ -118,7 +118,7 @@ export default function PlaylistDetail() {
     );
   }
 
-  const handleDownload = async (videoId: string) => {
+  const handleVideoDownload = async (videoId: string) => {
     setDownloading((prev) => new Set(prev).add(videoId));
     try {
       await axios.post(`${endpointPlaylists}/${id}/videos/${videoId}/download`);
@@ -133,16 +133,11 @@ export default function PlaylistDetail() {
     }
   };
 
-  const handleDelete = async () => {
-    try {
-      await axios.delete(`${endpointPlaylists}/${id}`);
-      router.push("/playlists");
-    } catch (error) {
-      toast.error("Failed to delete playlist: " + error);
-    }
-  };
-
-  
+  const qualityKey = Object.keys(DownloadQuality).find(
+    (key) =>
+      DownloadQuality[key as keyof typeof DownloadQuality] ==
+      playlist.default_quality
+  );
 
   return (
     <div className="p-3 md:p-6 pb-24">
@@ -167,48 +162,64 @@ export default function PlaylistDetail() {
         {/* Playlist Info */}
         <div className="flex-1 text-center md:text-left md:mt-2">
           <h1 className="text-xl md:text-2xl font-bold">{playlist.title}</h1>
-          <div className="text-gray-400 flex items-center justify-center md:justify-start mt-2">
-            <User size={18} className="mr-2" />{" "}
-            {playlist.uploader.name ?? "Unknown"}
-          </div>
-          <div className="text-gray-400 flex items-center justify-center md:justify-start">
-            <Calendar size={18} className="mr-2" /> Last video published:{" "}
-            {playlist.last_published ?? "N/A"}
-          </div>
-          <p className="text-gray-500 text-sm mt-2">{playlist.folder}</p>
-        </div>
 
-        {/* Action Buttons */}
-        {/* <div className="flex space-x-4 mt-4 md:mt-0">
-          <button className="text-yellow-400 hover:text-yellow-300 flex items-center">
-            <Pencil size={20} className="mr-2" /> Edit
-          </button>
-          <button
-            onClick={handleDelete}
-            className="text-red-400 hover:text-red-300 flex items-center"
-            disabled={isRefreshing}
-          >
-            <Trash size={20} className="mr-2" /> Delete
-          </button>
-          {/* Refresh Button */} 
-          {/* <button
-            onClick={handleRefresh}
-            className="text-blue-400 hover:text-blue-300 flex items-center"
-            disabled={isRefreshing}
-          >
-            <RefreshCw
-              size={20}
-              className={`mr-2 ${isRefreshing ? "animate-spin" : ""}`}
-            />
-            {isRefreshing ? "Refreshing..." : "Refresh"}
-          </button>
-        </div> */}
+          <div className="mt-2 font-bold flex flex-col gap-1 text-sm text-gray-300">
+            <div className="flex items-center justify-center md:justify-start gap-2">
+              <User size={16} /> {playlist.uploader.name ?? "Unknown"}
+            </div>
+
+            <div className="flex items-center justify-center md:justify-start gap-2">
+              <Calendar size={16} /> Last video published:{" "}
+              <span className="text-gray-400 font-medium">
+                {playlist.last_published ?? "N/A"}
+              </span>
+            </div>
+
+            <div className="flex items-center justify-center md:justify-start gap-2">
+              <span className="font-mono text-xs bg-gray-700 px-2 py-0.5 rounded">
+                {playlist.folder}
+              </span>
+            </div>
+          </div>
+
+          {/* Playlist Settings */}
+          <div className="hidden lg:grid grid-cols-2 gap-x-6 gap-y-2 max-w-80 mt-4 text-sm text-gray-300 font-bold">
+            <div className="flex items-center gap-2">
+              <Calendar size={16} />Check:{" "}
+                <span className="font-medium">{playlist.check_every_day ? "Every day" : "Never"}</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <Film size={16} />
+                  Format:{" "}
+                <span className="font-medium">{playlist.default_format}</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <Video size={16} />
+                Quality:{" "}
+                <span className="font-medium">{(qualityKey || "None").replace("q_", "").toUpperCase()}</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <Captions size={16} />
+                Subtitles:{" "}
+                <span className="font-medium">{playlist.default_subtitles ? "Yes" : "No"}</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <Download size={16} />
+                Videos:{" "}
+                <span className="font-medium">{`${playlist.videos.filter((v) => v.downloaded).length} / ${
+                  playlist.videos.length
+                }`}
+                </span>
+            </div>
+          </div>
+        </div>
 
         <InteractiveButtons
           id={id!.toString()}
+          playlist={playlist}
           isRefreshing={isRefreshing}
           onRefresh={handleRefresh}
-          />
+        />
       </div>
 
       {/* Video List */}
@@ -222,7 +233,7 @@ export default function PlaylistDetail() {
               key={video.id}
               video={video}
               progress={progress[video.id]}
-              onDownload={handleDownload}
+              onDownload={handleVideoDownload}
               isDownloading={downloading.has(video.id)}
             />
           ))}

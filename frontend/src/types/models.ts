@@ -5,6 +5,21 @@ enum DownloadState {
   ERROR = "ERROR",
 }
 
+enum DownloadFormat {
+  AUDIO = "AUDIO",
+  VIDEO = "VIDEO",
+}
+
+enum DownloadQuality {
+  q_best = "0",
+  q_2160p = "2160",
+  q_1440p = "1440",
+  q_1080p = "1080",
+  q_720p = "720",
+  q_480p = "480",
+  q_360p = "360",
+}
+
 interface Uploader {
   id: string;
   name: string;
@@ -40,6 +55,9 @@ interface PlaylistDetails {
   folder: string;
   thumbnail: string;
   check_every_day: boolean;
+  default_format: DownloadFormat;
+  default_quality: DownloadQuality;
+  default_subtitles?: boolean;
   uploader: Uploader;
   videos: VideoDetails[];
 }
@@ -48,11 +66,14 @@ interface VideoDetails {
   id: string;
   title: string;
   duration: string;
-  quality?: string;
+  quality?: DownloadQuality;
+  format?: DownloadFormat;
+  subtitles?: boolean;
   thumbnail: string;
   downloaded: boolean;
   state: DownloadState;
   upload_date: string;
 }
 
-export type { Playlist, Video, PlaylistDetails, VideoDetails };
+export type { Playlist, Video, PlaylistDetails, VideoDetails};
+export { DownloadState, DownloadFormat, DownloadQuality };

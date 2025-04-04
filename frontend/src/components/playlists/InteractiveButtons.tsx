@@ -1,36 +1,36 @@
-// import { useState } from "react";
 // import { Pencil, Trash, RefreshCw, Download } from "lucide-react";
-// import { toast } from "sonner";
+
 import {
-  Modal,
-  ModalContent,
-  ModalHeader,
-  ModalBody,
-  ModalFooter, 
-  useDisclosure,
-} from "@heroui/modal";
-import { Button } from "@heroui/button";
+  useModal,
+} from "@/components/modals/Modal";
+import { DeleteModal } from "@/components/modals/DeleteModal";
 import { endpointPlaylists } from "@/constants/endpoints";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { Pencil, Trash, RefreshCw, Download } from "lucide-react";
 import axios from "axios";
 import { toast } from "sonner";
+import DownloadPlaylistModal from "../modals/DownloadPlaylistModal";
+import EditModal from "../modals/EditModal";
+import { PlaylistDetails } from "@/types/models";
+import EditButton from "@/components/buttons/Edit";
+import DeleteButton from "../buttons/Delete";
+import RefreshButton from "../buttons/Refresh";
+import DownloadPlaylistButton from "../buttons/DownloadPlaylist";
 
 
-const InteractiveButtons = ({
-  id,
-  isRefreshing,
-//   setIsRefreshing,
-  onRefresh,
-}: {
+interface InteractiveButtonsProps {
   id: string;
   isRefreshing: boolean;
-//   setIsRefreshing: (isRefreshing: boolean) => void;
+  playlist: PlaylistDetails;
   onRefresh: () => Promise<void>;
-}) => {
-  const { isOpen: isDeleteOpen, onOpen: openDelete, onClose: closeDelete } = useDisclosure();
-  const { isOpen: isDownloadOpen, onOpen: openDownload, onClose: closeDownload } = useDisclosure();
+}
+
+const InteractiveButtons = ({
+  id, isRefreshing, playlist, onRefresh }: InteractiveButtonsProps) => {
+  const { isOpen: isEditOpen, openModal: openEdit, closeModal: closeEdit } = useModal();
+  const { isOpen: isDeleteOpen, openModal: openDelete, closeModal: closeDelete } = useModal();
+  const { isOpen: isDownloadOpen, openModal: openDownload, closeModal: closeDownload } = useModal();
   const [redownloadAll, setRedownloadAll] = useState(false);
   const router = useRouter();
 
@@ -58,101 +58,43 @@ const InteractiveButtons = ({
   };
 
   return (
-    <div className="flex space-x-4 mt-4 md:mt-0">
+    <div className="flex lg:flex-col gap-4 justify-around self-center mt-4">
+
       {/* Edit Button */}
-      <button
-        onClick={openDownload}
-        className="text-yellow-400 hover:text-yellow-300 flex items-center"
-      >
-        <Pencil size={20} className="mr-2" /> Edit
-      </button>
+      <EditButton onClick={openEdit} />
 
       {/* Delete Button with Confirmation */}
-      <button
-        onClick={openDelete}
-        className="text-red-400 hover:text-red-300 flex items-center"
-      >
-        <Trash size={20} className="mr-2" /> Delete
-      </button>
+      <DeleteButton onClick={openDelete} />
 
       {/* Refresh Button */}
-      <button
-        onClick={onRefresh
-    
-        }
-        className="text-blue-400 hover:text-blue-300 flex items-center"
-        disabled={isRefreshing}
-      >
-        <RefreshCw
-          size={20}
-          className={`mr-2 ${isRefreshing ? "animate-spin" : ""}`}
-        />
-        {isRefreshing ? "Refreshing..." : "Refresh"}
-      </button>
+      <RefreshButton onClick={onRefresh} isRefreshing={isRefreshing} />
 
       {/* Download Missing Videos Button */}
-      <button
-        onClick={openDownload}
-        className="text-green-400 hover:text-green-300 flex items-center"
-      >
-        <Download size={20} className="mr-2" /> Download Missing
-      </button>
+      <DownloadPlaylistButton onClick={openDownload} />
+
 
       {/* Delete Confirmation Modal */}
-      <Modal isOpen={isDeleteOpen} onOpenChange={closeDelete} backdrop="opaque">
-        <ModalContent>
-          {(onClose) => (
-            <>
-              <ModalHeader>Confirm Deletion</ModalHeader>
-              <ModalBody>
-                <p>Are you sure you want to delete this playlist?</p>
-              </ModalBody>
-              <ModalFooter>
-                <Button variant="light" onPress={onClose}>
-                  Cancel
-                </Button>
-                <Button color="danger" onPress={handleDeleteConfirm}>
-                  Delete
-                </Button>
-              </ModalFooter>
-            </>
-          )}
-        </ModalContent>
-      </Modal>
+      <DeleteModal
+        isDeleteOpen={isDeleteOpen}
+        closeDelete={closeDelete}
+        handleDeleteConfirm={handleDeleteConfirm}
+      />
 
-      {/* Download Options Modal */}
-      <Modal
-        isOpen={isDownloadOpen}
-        onOpenChange={closeDownload}
-        backdrop="opaque"
-      >
-        <ModalContent>
-          {(onClose) => (
-            <>
-              <ModalHeader>Download Options</ModalHeader>
-              <ModalBody>
-                <label className="flex items-center mt-3">
-                  <input
-                    type="checkbox"
-                    checked={redownloadAll}
-                    onChange={(e) => setRedownloadAll(e.target.checked)}
-                    className="mr-2"
-                  />
-                  Redownload all videos (even existing ones)
-                </label>
-              </ModalBody>
-              <ModalFooter>
-                <Button variant="light" onPress={onClose}>
-                  Cancel
-                </Button>
-                <Button color="primary" onPress={handleDownloadMissing}>
-                  Start Download
-                </Button>
-              </ModalFooter>
-            </>
-          )}
-        </ModalContent>
-      </Modal>
+      {/* Download Modal */}
+      <DownloadPlaylistModal
+        isDownloadOpen={isDownloadOpen}
+        closeDownload={closeDownload}
+        handleDownloadMissing={handleDownloadMissing}
+        redownloadAll={redownloadAll}
+        setRedownloadAll={setRedownloadAll}
+      />
+
+      <EditModal
+        isEditOpen={isEditOpen}
+        closeEdit={closeEdit}
+        playlist={playlist}
+      />
+
     </div>
   );
 };
