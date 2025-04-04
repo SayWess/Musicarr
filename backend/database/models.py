@@ -17,6 +17,15 @@ class DownloadFormat(str, PyEnum):
     VIDEO = "VIDEO"
     AUDIO = "AUDIO"
 
+class DownloadQuality(int, PyEnum):
+    q_best = 0
+    q_2160p = 2160
+    q_1440p = 1440
+    q_1080p = 1080
+    q_720p = 720
+    q_480p = 480
+    q_360p = 360
+
 # Uploader Model
 class Uploader(Base):
     __tablename__ = "uploaders"
@@ -57,7 +66,7 @@ class Playlist(Item):
 
     # Default Download Settings for the Playlist
     default_format = Column(Enum(DownloadFormat), default=DownloadFormat.AUDIO)  # VIDEO or AUDIO
-    default_quality = Column(String, nullable=True, default="best")  # e.g., "1080p", "720p", "best"
+    default_quality = Column(Enum(DownloadQuality), nullable=True, default=DownloadQuality.q_best)  # e.g., "1080p", "720p", "best"
     default_subtitles = Column(Boolean, default=False)  # Whether to download subtitles
 
     # ForeignKey to Uploader
@@ -91,7 +100,7 @@ class PlaylistVideo(Base):
 
     # Per-video settings (if None, fall back to playlist defaults)
     format = Column(Enum(DownloadFormat), nullable=True)  # VIDEO or AUDIO
-    quality = Column(String, nullable=True)  # e.g., "1080p", "720p", "best"
+    quality = Column(Enum(DownloadQuality), nullable=True)  # e.g., "1080p", "720p", "best"
     subtitles = Column(Boolean, nullable=True)  # Whether to download subtitles
 
     # Custom title & download location per playlist
