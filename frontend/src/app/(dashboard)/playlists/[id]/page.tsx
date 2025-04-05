@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import { useRouter, useParams } from "next/navigation";
-import useSWR from "swr";
+import useSWR, { mutate } from "swr";
 import { Calendar, User, Video, Download, Film, Captions, ArrowLeft } from "lucide-react";
 import { PlaylistDetails, VideoDetails, DownloadQuality } from "@/types/models";
 import axios from "axios";
@@ -52,6 +52,14 @@ export default function PlaylistDetail() {
         setIsRefreshing(false);
       } else if (data.playlist_id === id && data.fetch_success === false) {
         setIsRefreshing(false);
+      }
+
+      console.log(data)
+
+      if (data.playlist_id === id && data.options_updated === true) {
+        toast.success("Playlist options updated successfully.");
+        console.log("Playlist options updated successfully.");
+        mutate(`${endpointPlaylists}/${id}/details`);
       }
     },
     webSocketKey

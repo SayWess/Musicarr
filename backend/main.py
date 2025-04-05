@@ -34,9 +34,9 @@ active_connections = {}
 @app.websocket("/ws/playlists")
 async def websocket_endpoint(websocket: WebSocket):
     await websocket.accept()
-    # if "playlists" not in active_connections:
-    #     active_connections["playlists"] = []
-    active_connections["playlists"] = websocket
+    if "playlists" not in active_connections:
+        active_connections["playlists"] = []
+    active_connections["playlists"].append(websocket)
 
     print(active_connections)
 
@@ -44,8 +44,8 @@ async def websocket_endpoint(websocket: WebSocket):
         while True:
             await websocket.receive_text()  # Attendre un message (optionnel)
     except WebSocketDisconnect:
-        # active_connections["playlists"].remove(websocket)
-        active_connections.pop("playlists", None)
+        active_connections["playlists"].remove(websocket)
+        # active_connections.pop(websocket, None)
         print("WebSocket disconnected")
 
 # Gérer les connexions WebSocket
@@ -94,15 +94,16 @@ async def fetch_full_playlist(playlist_id: str, playlist_title: str = None):
     if not result:
         print(f"Failed to fetch playlist info for {playlist_id}.")
         if "playlists" in active_connections:
-            # for ws in :
-            await active_connections["playlists"].send_json({"playlist_id": playlist_id, "fetch_success": False, "playlist_title": playlist_title, "message": "Failed to fetch playlist info" })
+            for ws in active_connections["playlists"]:
+                # await active_connections["playlists"].send_json({"playlist_id": playlist_id, "fetch_success": False, "playlist_title": playlist_title, "message": "Failed to fetch playlist info" })
+                await ws.send_json({"playlist_id": playlist_id, "fetch_success": False, "playlist_title": playlist_title, "message": "Failed to fetch playlist info" })
     else:
         print(f"Fetched full playlist info for {playlist_id}.")
 
         if "playlists" in active_connections:
-            # for ws in active_connections["playlists"]:
-            await active_connections["playlists"].send_json({"playlist_id": playlist_id, "fetch_success": True, "playlist_title": result, "message": "Fetched full playlist info" })
-
+            for ws in active_connections["playlists"]:
+                # await active_connections["playlists"].send_json({"playlist_id": playlist_id, "fetch_success": True, "playlist_title": result, "message": "Fetched full playlist info" })
+                await ws.send_json({"playlist_id": playlist_id, "fetch_success": True, "playlist_title": playlist_title, "message": "Fetched full playlist info" })
 
 
 
@@ -171,6 +172,13 @@ async def update_playlist(playlist_id: str, attributes_updated: dict, db: AsyncS
     
     # Commit the changes to the database
     await db.commit()
+
+    
+    if "playlists" in active_connections:
+        for ws in active_connections["playlists"]:
+            # await active_connections["playlists"].send_json({"playlist_id": playlist_id, "options_updated": True})
+            await ws.send_json({"playlist_id": playlist_id, "options_updated": True})
+
     return {"message": f"Playlist updated", "playlist_id": playlist_id}
 
 @app.post("/api/playlists/{playlist_id}")

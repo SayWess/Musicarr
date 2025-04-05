@@ -15,7 +15,7 @@ export function useGlobalWebSocket() {
             color: "#f8fafc",
         },
       });
-    } else {
+    } else if (data.fetch_success === false) {
       toast.error(`Failed to refresh playlist "${data.playlist_id}".`, {
         style: {
             backgroundColor: "#1e293b",
