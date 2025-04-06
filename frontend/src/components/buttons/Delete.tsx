@@ -2,12 +2,14 @@ import { Trash } from "lucide-react";
 
 interface DeleteButtonProps {
   onClick: () => void;
+  isDownloading: boolean;
 }
 
-const DeleteButton = ({ onClick }: DeleteButtonProps) => {
+const DeleteButton = ({ onClick, isDownloading }: DeleteButtonProps) => {
   return (
     <button
       onClick={onClick}
+      disabled={isDownloading}
       className="text-red-400 hover:text-red-300 flex items-center"
     >
       <Trash size={20} className="mr-2" />{" "}

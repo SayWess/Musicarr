@@ -113,10 +113,10 @@ const EditModal = ({ isEditOpen, closeEdit, playlist }: EditModalProps) => {
         throw new Error("Failed to save options");
       }
       mutate(`${endpointPlaylists}/${playlist.id}/details`);
-      successToast({
-        title: "Options saved",
-        description: "Your changes have been saved.",
-      });
+      // successToast({
+      //   title: "Options saved",
+      //   description: "Your changes have been saved.",
+      // });
       closeEdit();
     } catch (error) {
       console.error("Error saving options:", error);

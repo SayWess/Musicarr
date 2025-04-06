@@ -1,37 +1,74 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useWebSocket } from "@/hooks/useWebSocket";
 import { endpointWebSocketPlaylists } from "@/constants/endpoints";
+import { toast } from "sonner";
+import { mutate } from "swr";
+import { endpointPlaylists } from "@/constants/endpoints";
 
-const useDownloadProgress = (playlistId: string, onDownloadComplete?: (videoId: string) => void) => {
-  const [downloading, setDownloading] = useState<Set<string>>(new Set());
+const useDownloadProgress = (playlistId: string) => {
   const [progress, setProgress] = useState<Record<string, number>>({});
-  const { connect, disconnect } = useWebSocket();
+  const [download_stage, setDownloadStage] = useState<Record<string, string>>({});
 
-  useEffect(() => {
-    if (!playlistId) return;
+  const updateStatus = (video_id: string, status: "DOWNLOADING" | "DOWNLOADED" | "ERROR") => {
+    mutate(
+      `${endpointPlaylists}/${playlistId}/videos/${video_id}/download_status`,
+      { status },
+      false
+    );
+    mutate(`${endpointPlaylists}/${playlistId}/number_of_videos_downloaded`,);
+  };
 
-    connect(`${endpointWebSocketPlaylists}/${playlistId}`, (data) => {
-      if (data.video_id) {
-        setProgress((prev) => ({
-          ...prev,
-          [data.video_id]: data.progress,
-        }));
+  useWebSocket(
+    `${endpointWebSocketPlaylists}`,
+    (data) => {
+      if (data.playlist_id !== playlistId) return;
 
-        setDownloading((prev) => new Set(prev).add(data.video_id));
+      const video_id = data.video_id;
+      if (!video_id) return;
 
-        if (data.message === "Download complete" && onDownloadComplete) {
-          onDownloadComplete(data.video_id);
-        }
+      switch (data.status) {
+        case "started":
+          setProgress((prev) => ({ ...prev, [video_id]: 0 }));
+          updateStatus(video_id, "DOWNLOADING");
+          break;
+
+        case "downloading":
+          if (typeof data.progress === "number") {
+            setProgress((prev) => ({ ...prev, [video_id]: data.progress }));
+            if (data.download_stage) {
+              setDownloadStage((prev) => ({ ...prev, [video_id]: data.download_stage }));
+            }
+          }
+          break;
+
+        case "finished":
+          setProgress((prev) => {
+            const updated = { ...prev };
+            delete updated[video_id];
+            return updated;
+          });
+          updateStatus(video_id, "DOWNLOADED");
+          toast.success(`Download complete: ${data.video_title || video_id}`);
+          mutate
+          break;
+
+        case "error":
+          setProgress((prev) => {
+            const updated = { ...prev };
+            delete updated[video_id];
+            return updated;
+          });
+          updateStatus(video_id, "ERROR");
+          toast.error(`Download failed: ${data.video_title || video_id}`);
+          break;
       }
-    });
-
-    return () => disconnect(); // Cleanup on unmount
-  }, [playlistId]);
+    },
+    `playlist-download-progress-${playlistId}`
+  );
 
   return {
-    progress,
-    downloading,
-    setDownloading,
+    getProgress: (id: string) => progress[id] ?? 0,
+    getDownloadStage: (id: string) => download_stage[id] ?? ""
   };
 };
 

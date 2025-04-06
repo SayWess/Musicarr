@@ -3,14 +3,15 @@ import { RefreshCw } from "lucide-react";
 interface RefreshButtonProps {
   onClick: () => void;
   isRefreshing: boolean;
+  isDownloading: boolean;
 }
 
-const RefreshButton = ({ onClick, isRefreshing }: RefreshButtonProps) => {
+const RefreshButton = ({ onClick, isRefreshing, isDownloading }: RefreshButtonProps) => {
   return (
     <button
       onClick={onClick}
       className="text-blue-400 hover:text-blue-300 flex items-center"
-      disabled={isRefreshing}
+      disabled={isRefreshing || isDownloading}
     >
       <RefreshCw
         size={20}

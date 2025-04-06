@@ -17,6 +17,7 @@ import { useWebSocket } from "@/hooks/useWebSocket";
 import { useState } from "react";
 import { useEffect } from "react";
 import InteractiveButtons from "@/components/playlists/InteractiveButtons";
+import NumberOfVideosDownloaded from "@/components/playlists/NumberOfVideosDownloaded";
 
 
 const fetcher = (url: string) => axios.get(url).then((res) => res.data);
@@ -31,35 +32,50 @@ export default function PlaylistDetail() {
   } = useSWR<PlaylistDetails>(`${endpointPlaylists}/${id}/details`, fetcher);
 
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [isDownloading, setIsDownloading] = useState(false);
 
-  const { progress, downloading, setDownloading } = useDownloadProgress(
-    String(id),
-    (videoId) => {
-      setDownloading((prev) => {
-        const updated = new Set(prev);
-        updated.delete(videoId);
-        return updated;
-      });
-    }
-  );
+  const { getProgress, getDownloadStage } = useDownloadProgress(String(id));
 
   const webSocketKey = `playlist-details-${id}`;
   useWebSocket(
     `${endpointWebSocketPlaylists}`,
     (data) => {
-      if (data.playlist_id === id && data.fetch_success === true) {
+      if (data.playlist_id !== id) return;
+
+      if (data.fetch_success === true) {
         console.log("WebSocket message received from Playlist Details:", data);
         setIsRefreshing(false);
-      } else if (data.playlist_id === id && data.fetch_success === false) {
+      } else if (data.fetch_success === false) {
         setIsRefreshing(false);
       }
 
-      console.log(data)
-
-      if (data.playlist_id === id && data.options_updated === true) {
+      if (data.options_updated === true) {
         toast.success("Playlist options updated successfully.");
         console.log("Playlist options updated successfully.");
         mutate(`${endpointPlaylists}/${id}/details`);
+      }
+
+      if (data.download_success === true) {
+        setIsDownloading(false);
+
+        if (data.up_to_date) {
+          toast.success("Playlist is already up to date.");
+          console.log("Playlist is already up to date.");
+        } else {
+          if (data.nb_download_failed === 0) {
+            toast.success("Playlist downloaded successfully.");
+          } else {
+            toast.error(`Playlist downloaded with ${data.nb_download_failed}${data.total_to_download ? "/" + data.total_to_download : "" } fails.`);
+          }
+        }
+
+      
+        // mutate(`${endpointPlaylists}/${id}/details`);
+        console.log("Playlist downloaded successfully.");
+      } else if (data.download_success === false) {
+        setIsDownloading(false);
+        toast.error("Playlist download failed.");
+        console.log("Playlist download failed.");
       }
     },
     webSocketKey
@@ -74,7 +90,7 @@ export default function PlaylistDetail() {
       .then((res) => res.json())
       .then((data) => {
         if (data.is_fetching && isMounted) {
-          toast.info(`Playlist ${playlist?.title} is being refreshed.`);
+          toast.info(`Playlist is being refreshed.`);
           setIsRefreshing(true);
         }
       })
@@ -82,10 +98,23 @@ export default function PlaylistDetail() {
         console.error("Error checking playlist refresh status:", error);
       });
 
+      fetch(`${endpointPlaylists}/${id}/download_status`)
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.is_downloading && isMounted) {
+          toast.info(`Playlist is being downloaded.`);
+          setIsDownloading(true);
+        }
+      })
+      .catch((error) => {
+        console.error("Error checking playlist download status:", error);
+      });
+
     return () => {
       isMounted = false; // Cleanup to avoid state updates on unmounted component
     };
   }, [id]);
+
 
   const handleRefresh = async () => {
     if (isRefreshing) return;
@@ -105,6 +134,28 @@ export default function PlaylistDetail() {
       setIsRefreshing(false);
     }
   };
+
+  const handleDownload = async (redownloadAll: boolean) => {
+    if (isDownloading) return;
+    setIsDownloading(true);
+
+    try {
+      const response = await fetch(`${endpointPlaylists}/${id}/download`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ redownload_all: redownloadAll }),
+      });
+
+      if (!response.ok) throw new Error("Failed to download playlist");
+
+    } catch (error) {
+      toast.error("Failed to start the download of the playlist");
+      console.error("Error downloading playlist:", error);
+      setIsDownloading(false);
+    }
+  }
 
   if (isLoading) {
     return (
@@ -127,17 +178,12 @@ export default function PlaylistDetail() {
   }
 
   const handleVideoDownload = async (videoId: string) => {
-    setDownloading((prev) => new Set(prev).add(videoId));
     try {
       await axios.post(`${endpointPlaylists}/${id}/videos/${videoId}/download`);
     } catch (error) {
       console.error("Download failed:", error);
     } finally {
-      setDownloading((prev) => {
-        const updated = new Set(prev);
-        updated.delete(videoId);
-        return updated;
-      });
+    
     }
   };
 
@@ -162,6 +208,7 @@ export default function PlaylistDetail() {
         <Image
           src={playlist.thumbnail || "/404_page-not-found.webp"}
           alt={playlist.title}
+          priority={true}
           width={200}
           height={100}
           className="rounded-lg shadow-lg mb-4 md:mb-0 md:mr-6 w-full max-w-[400px] h-auto aspect-video object-cover"
@@ -211,14 +258,7 @@ export default function PlaylistDetail() {
                 Subtitles:{" "}
                 <span className="font-medium">{playlist.default_subtitles ? "Yes" : "No"}</span>
             </div>
-            <div className="flex items-center gap-2">
-              <Download size={16} />
-                Videos:{" "}
-                <span className="font-medium">{`${playlist.videos.filter((v) => v.downloaded).length} / ${
-                  playlist.videos.length
-                }`}
-                </span>
-            </div>
+            <NumberOfVideosDownloaded playlist_id={playlist.id} />
           </div>
         </div>
 
@@ -227,22 +267,22 @@ export default function PlaylistDetail() {
           playlist={playlist}
           isRefreshing={isRefreshing}
           onRefresh={handleRefresh}
+          isDownloading={isDownloading}
+          onDownload={handleDownload}
         />
       </div>
 
       {/* Video List */}
       <div className="mt-6">
-        <h2 className="text-2xl font-semibold text-gray-200 mb-4">
-          Playlist Videos
-        </h2>
         <div className="space-y-4">
           {playlist.videos.map((video: VideoDetails) => (
             <VideoItem
               key={video.id}
+              playlist_id={playlist.id}
               video={video}
-              progress={progress[video.id]}
+              progress={getProgress(video.id)}
+              download_stage={getDownloadStage(video.id)}
               onDownload={handleVideoDownload}
-              isDownloading={downloading.has(video.id)}
             />
           ))}
         </div>

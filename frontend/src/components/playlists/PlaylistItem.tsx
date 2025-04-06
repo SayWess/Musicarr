@@ -9,47 +9,89 @@ import { useEffect } from "react";
 import { useState } from "react";
 import { useWebSocket } from "@/hooks/useWebSocket";
 import { endpointWebSocketPlaylists } from "@/constants/endpoints";
+import { toast } from "sonner";
+import useSWR from "swr";
+import { fetcher } from "@/utils/fetcher";
 
 export const PlaylistItem = ({ playlist }: { playlist: Playlist }) => {
   const { toggleCheckEveryDay } = usePlaylists();
-  const hasMissingVideos = playlist.missing_videos > 0;
+  // const hasMissingVideos = playlist.missing_videos > 0;
 
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [isDownloading, setIsDownloading] = useState(false);
 
-  useWebSocket(`${endpointWebSocketPlaylists}`, (data) => {
-    if (data.playlist_id === playlist.id && data.fetch_success === true) {
-      console.log("WebSocket message received from Item:", data);
-      setIsRefreshing(false);
-    } else if (
-      data.playlist_id === playlist.id &&
-      data.fetch_success === false
-    ) {
-      setIsRefreshing(false);
-    }
-  },
-  `playlist-item-${playlist.id}`);
+  const { data: data, isLoading } = useSWR(
+    `${endpointPlaylists}/${playlist.id}/number_of_videos_downloaded`,
+    fetcher
+  );
+
+  useWebSocket(
+    `${endpointWebSocketPlaylists}`,
+    (data) => {
+      if (data.playlist_id !== playlist.id) return;
+
+      if (data.fetch_success === true) {
+        console.log("WebSocket message received from Item:", data);
+        setIsRefreshing(false);
+      } else if (data.fetch_success === false) {
+        setIsRefreshing(false);
+      }
+
+      if (data.download_success === true) {
+        setIsDownloading(false);
+      }
+    },
+    `playlist-item-${playlist.id}`
+  );
 
   useEffect(() => {
+    if (!playlist.id) return;
+
+    let isMounted = true; // Prevents running twice due to re-renders
+
     fetch(`${endpointPlaylists}/${playlist.id}/is_fetching`)
       .then((res) => res.json())
       .then((data) => {
-        if (data.is_fetching) {
+        if (data.is_fetching && isMounted) {
           setIsRefreshing(true);
         }
       })
       .catch((error) => {
         console.error("Error checking playlist refresh status:", error);
       });
-  }, []);
 
+    fetch(`${endpointPlaylists}/${playlist.id}/download_status`)
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.is_downloading && isMounted) {
+          toast.info(`Playlist ${playlist.title} is being downloaded.`);
+          setIsDownloading(true);
+        }
+      })
+      .catch((error) => {
+        console.error("Error checking playlist download status:", error);
+      });
+    return () => {
+      isMounted = false; // Cleanup to avoid state updates on unmounted component
+    };
+  }, [playlist.id]);
+
+  const missing_videos = data?.total_videos - data?.downloaded_videos
+  
+  const hasMissingVideos = missing_videos > 0;
 
   return (
     <Link
       href={`/playlists/${playlist.id}`}
       prefetch={true}
-      className={`block bg-gray-900 text-gray-200 rounded-xl shadow-md relative overflow-hidden transition-all duration-300 hover:shadow-xl hover:scale-105 hover:ring-2 hover:ring-blue-500/50 ${
-        isRefreshing ? "animate-pulse" : ""
-      }`}
+      className={`block bg-gray-900 text-gray-200 rounded-xl shadow-md relative overflow-hidden transition-all duration-300 hover:shadow-xl hover:scale-105 hover:ring-2 hover:ring-blue-500/50 
+      ${isRefreshing ? "animate-pulse bg-gradient-to-r from-blue-900/50" : ""}
+      ${
+        isDownloading && !isRefreshing
+          ? "animate-pulse bg-gradient-to-r from-green-900/50"
+          : ""
+      }
+        `}
     >
       {/* Thumbnail Container */}
       <div className="relative group overflow-hidden rounded-xl">
@@ -57,6 +99,7 @@ export const PlaylistItem = ({ playlist }: { playlist: Playlist }) => {
         <Image
           src={playlist.thumbnail || "/404_page-not-found.webp"}
           alt={playlist.title}
+          priority={true}
           width={200}
           height={100}
           className="w-full min-h-40 object-cover transition-transform duration-300 group-hover:scale-105"
@@ -91,12 +134,17 @@ export const PlaylistItem = ({ playlist }: { playlist: Playlist }) => {
         {/* Missing Videos Indicator (Bottom-Left) */}
         <span
           className={`absolute top-2 left-2 px-2 py-1 text-xs font-semibold rounded-md transition-all duration-300 ${
-            hasMissingVideos
+            !isLoading && data && data.total_videos !== data.downloaded_videos
               ? "bg-red-500 text-white"
               : "bg-green-500 text-white"
           }`}
         >
-          {hasMissingVideos ? `${playlist.missing_videos}` : ""}
+          {isLoading ? (
+            <span className="animate-pulse"></span>
+          ) : (
+            <span>{data.total_videos !== data.downloaded_videos ? data.total_videos - data.downloaded_videos : ""}</span>
+          )}
+          {/* {hasMissingVideos ? `${playlist.missing_videos}` : ""} */}
         </span>
       </div>
     </Link>

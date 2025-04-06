@@ -6,7 +6,6 @@ import { endpointPlaylists, endpointWebSocketPlaylists } from "@/constants/endpo
 export function useGlobalWebSocket() {
   useWebSocket(endpointWebSocketPlaylists, (data) => {
     if (data.fetch_success) {
-      console.log("Global WebSocket message received:", data);
       mutate(`${endpointPlaylists}`);
       mutate(`${endpointPlaylists}/${data.playlist_id}/details`);
       toast.success(`Playlist "${data.playlist_title}" refreshed successfully!`, {
