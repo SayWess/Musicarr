@@ -5,6 +5,13 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 import asyncio
 
+from websocket_manager import ws_manager
+from database.database import SessionLocal
+
+from utils.sanitize import sanitize_title
+
+fetching = {}
+
 
 async def fetch_playlist_info(playlist_url):
     """
@@ -100,7 +107,7 @@ async def fetch_and_store_playlist_info(playlist_url, db: AsyncSession):
 
     if playlist:
        # Update existing playlist
-        playlist.title = playlist_info.get("title")
+        playlist.title = sanitize_title(playlist_info.get("title"))
         playlist.description = playlist_info.get("description")
         playlist.thumbnail = first_entry.get("thumbnail")
         playlist.last_published = first_entry.get("upload_date")
@@ -112,7 +119,7 @@ async def fetch_and_store_playlist_info(playlist_url, db: AsyncSession):
         # Create new playlist if it doesn't exist
         playlist = Playlist(
             source_id=playlist_info.get("id"),
-            title=playlist_info.get("title"),
+            title=sanitize_title(playlist_info.get("title")),
             description=playlist_info.get("description"),
             thumbnail=first_entry.get("thumbnail"),
             uploader_id=uploader.id,
@@ -194,3 +201,38 @@ async def fetch_and_store_playlist_info(playlist_url, db: AsyncSession):
 
     return playlist.title
 
+
+async def fetch_full_playlist(playlist_id: str, playlist_title: str = None):
+    """Fetch full playlist info in the background."""
+    print(f"Fetching full playlist info for {playlist_id}...")
+    # Check if already fetching
+    if playlist_id in fetching:
+        print(f"Already fetching playlist {playlist_id}.")
+        return
+    
+    fetching[playlist_id] = True
+
+    async with SessionLocal() as db:
+        try: 
+            # Fetch and store playlist info
+            print(f"Fetching playlist info for {playlist_id}...")
+            result = await fetch_and_store_playlist_info(playlist_id, db)
+        except Exception as e:
+            print(f"Error fetching playlist info: {e}")
+            result = None
+        finally:
+            fetching.pop(playlist_id, None)
+    
+    if not result:
+        print(f"Failed to fetch playlist info for {playlist_id}.")
+        await ws_manager.send_message(
+            "playlists", 
+            {"playlist_id": playlist_id, "fetch_success": False, "playlist_title": playlist_title, "message": "Failed to fetch playlist info" }
+        )
+    else:
+        print(f"Fetched full playlist info for {playlist_id}.")
+
+        await ws_manager.send_message(
+            "playlists", 
+            {"playlist_id": playlist_id, "fetch_success": True, "playlist_title": playlist_title, "message": "Fetched full playlist info" }
+        )
