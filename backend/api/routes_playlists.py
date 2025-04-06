@@ -1,0 +1,320 @@
+from fastapi import APIRouter, Depends, HTTPException
+from sqlalchemy.orm import Session, selectinload
+from database.database import get_db
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy import select, func
+from database.models import Playlist, PlaylistVideo, DownloadState, Video
+import asyncio
+from utils.fetchPlaylistInfo import fetch_full_playlist
+from utils.download_playlist import download_playlist
+
+from websocket_manager import ws_manager
+
+
+router = APIRouter()
+
+
+@router.get("/")
+async def get_playlists(db: AsyncSession = Depends(get_db)):
+    """
+    Récupérer la liste des playlists avec le nombre de vidéos non téléchargées (calculé via COUNT SQL)
+    """
+    # Query to fetch playlists with count of missing videos
+    result = await db.execute(
+        select(
+            Playlist.source_id,
+            Playlist.title,
+            Playlist.thumbnail,
+            Playlist.check_every_day,
+            Playlist.folder,
+            func.count(PlaylistVideo.id).filter(PlaylistVideo.state != DownloadState.DOWNLOADED).label("missing_videos"),
+        )
+        .outerjoin(Playlist.videos)  # Join to count related videos
+        .group_by(Playlist.id)
+    )
+
+    playlists = result.all()
+
+    # Convert to JSON-friendly response
+    return [
+        {
+            "id": source_id,
+            "title": title,
+            "check_every_day": check_every_day,
+            "thumbnail": thumbnail,  # Assuming thumbnail is stored as folder/id.jpg
+            "folder": folder,
+            "missing_videos": missing_videos
+        }
+        for source_id, title, thumbnail, check_every_day, folder, missing_videos in playlists if source_id != 0
+    ]
+
+
+@router.get("/{playlist_id}")
+async def get_playlist(playlist_id: str, db: AsyncSession = Depends(get_db)):
+    """
+    Récupérer une playlist par son ID
+    """
+    result = await db.execute(select(Playlist).where(Playlist.source_id == playlist_id))
+    playlist = result.scalars().first()
+    if not playlist:
+        raise HTTPException(status_code=404, detail="Playlist not found")
+    return playlist
+
+
+@router.put("/{playlist_id}")
+async def update_playlist(playlist_id: str, attributes_updated: dict, db: AsyncSession = Depends(get_db)):
+    """
+    Mettre à jour une playlist par son id
+    """
+    result = await db.execute(select(Playlist).where(Playlist.source_id == playlist_id))
+    playlist = result.scalars().first()
+    if not playlist:
+        raise HTTPException(status_code=404, detail="Playlist not found")
+
+    # Update the playlist fields
+    for key, value in attributes_updated.items():
+        setattr(playlist, key, value)
+    
+    # Commit the changes to the database
+    await db.commit()
+
+    await ws_manager.send_message("playlists", {"playlist_id": playlist_id, "options_updated": True})
+
+    return {"message": f"Playlist updated", "playlist_id": playlist_id}
+
+
+@router.delete("/{playlist_id}")
+async def delete_playlist(playlist_id: str, db: AsyncSession = Depends(get_db)):
+    """
+    Supprimer une playlist par son ID
+    """
+    result = await db.execute(select(Playlist).where(Playlist.source_id == playlist_id))
+    playlist = result.scalars().first()
+    if not playlist:
+        raise HTTPException(status_code=404, detail="Playlist not found")
+
+    # Delete the playlist from the database
+    await db.delete(playlist)
+    await db.commit()
+
+    return {"message": "Playlist deleted"}
+
+@router.post("/{playlist_id}")
+async def add_playlist(playlist_id: str, db: AsyncSession = Depends(get_db)):
+    """
+    Ajouter une playlist par son ID
+    """
+    # Check if the playlist already exists
+    result = await db.execute(select(Playlist).where(Playlist.source_id == playlist_id))
+    existing_playlist = result.scalars().first()
+    if existing_playlist:
+        return {"message": "Playlist already exists", "error": True}
+
+    # Create a new playlist instance
+    new_playlist = Playlist(
+        source_id=playlist_id,
+        title="Fetching playlist " + playlist_id,
+    )
+
+    # Add the new playlist to the database
+    db.add(new_playlist)
+    await db.commit()
+
+    print("Playlist committed")
+
+    # Start background task to fetch full playlist details
+    asyncio.create_task(fetch_full_playlist(playlist_id))
+
+    print("Playlist added")
+
+    return {"message": "Playlist added", "playlist": new_playlist}
+
+
+@router.get("/{playlist_id}/details")
+async def get_playlist_details(playlist_id: str, db: AsyncSession = Depends(get_db)):
+    """
+    Récupérer les détails d'une playlist avec l'info de l'uploader et les vidéos associées.
+    """
+    result = await db.execute(
+        select(Playlist)
+        .where(Playlist.source_id == playlist_id)
+        .options(selectinload(Playlist.uploader))  # Load uploader relationship
+    )
+    playlist = result.scalars().first()
+    
+    if not playlist:
+        raise HTTPException(status_code=404, detail="Playlist not found")
+
+    # Fetch related videos correctly
+    videos_result = await db.execute(
+        select(Video)
+        .join(PlaylistVideo, PlaylistVideo.video_id == Video.id)
+        .where(PlaylistVideo.playlist_id == playlist.id)
+    )
+    videos = videos_result.scalars().all()
+
+
+    return {
+        "id": playlist.source_id,
+        "title": playlist.title,
+        "folder": playlist.folder,
+        "last_published": playlist.last_published,
+        "thumbnail": playlist.thumbnail,
+        "check_every_day": playlist.check_every_day,
+        "default_format": playlist.default_format,
+        "default_quality": playlist.default_quality,
+        "default_subtitles": playlist.default_subtitles,
+        "uploader": {
+            "id": playlist.uploader.id if playlist.uploader else None,
+            "name": playlist.uploader.name if playlist.uploader else "Unknown",
+            "channel_url": playlist.uploader.channel_url if playlist.uploader else None,
+        },
+        "videos": [
+            {
+                "id": video.source_id,
+                "title": video.title,
+                "thumbnail": video.thumbnail,
+                "duration": video.duration,
+                "upload_date": video.upload_date,
+            }
+            for video in videos
+        ]
+    }
+
+from sqlalchemy import case
+
+@router.get("/{playlist_id}/number_of_videos_downloaded")
+async def get_number_of_videos_downloaded(playlist_id: str, db: AsyncSession = Depends(get_db)):
+    """
+    Récupérer le nombre de vidéos téléchargées et le total de vidéos dans une playlist par son ID
+    """
+    stmt = (
+        select(
+            func.count(PlaylistVideo.id).label("total_videos"),
+            func.count(
+                case((PlaylistVideo.state == DownloadState.DOWNLOADED, 1))
+            ).label("downloaded_videos")
+        )
+        .join(Playlist, PlaylistVideo.playlist_id == Playlist.id)
+        .where(Playlist.source_id == playlist_id)
+    )
+
+    result = await db.execute(stmt)
+    row = result.first()
+
+    if row is None:
+        raise HTTPException(status_code=404, detail="Playlist not found")
+
+    return {
+        "playlist_id": playlist_id,
+        "downloaded_videos": row.downloaded_videos,
+        "total_videos": row.total_videos
+    }
+
+
+@router.post("/{playlist_id}/refresh")
+async def refresh_playlist(playlist_id: str, db: AsyncSession = Depends(get_db)):
+    """
+    Récupérer les vidéos d'une playlist par son ID
+    """
+    result = await db.execute(select(Playlist).where(Playlist.source_id == playlist_id))
+    playlist = result.scalars().first()
+    
+    if not playlist:
+        raise HTTPException(status_code=404, detail="Playlist not found")
+
+    # Start the refresh process
+    asyncio.create_task(fetch_full_playlist(playlist_id, playlist.title))
+
+    return {"message": "Refresh started", "playlist_id": playlist_id}
+
+from utils.fetchPlaylistInfo import fetching
+@router.get("/{playlist_id}/is_fetching")
+async def is_fetching_playlist(playlist_id: str):
+    """
+    Vérifier si une playlist est en cours de téléchargement
+    """
+    if playlist_id in fetching:
+        return {"message": "Playlist is being fetched", "is_fetching": True}
+    else:
+        return {"message": "Playlist is not being fetched", "is_fetching": False}
+    
+
+from utils.download_playlist import downloading
+from pydantic import BaseModel
+from typing import Optional
+
+class DownloadRequest(BaseModel):
+    redownload_all: Optional[bool] = False  # Default to False if not provided
+
+@router.post("/{playlist_id}/download")
+async def start_playlist_download(playlist_id: str, request_data: DownloadRequest, db: AsyncSession = Depends(get_db)):
+    """
+    Démarre le téléchargement de la playlist
+    """
+    # Correct fetch: select entire Playlist object
+    result = await db.execute(
+        select(Playlist).where(Playlist.source_id == playlist_id)
+    )
+    playlist = result.scalar_one_or_none()
+
+    if not playlist:
+        raise HTTPException(status_code=404, detail="Playlist not found")
+
+    # Check if the playlist is already being downloaded
+    if playlist.source_id in downloading:
+        raise HTTPException(status_code=400, detail="Playlist is already being downloaded")
+
+    # Check if the playlist is being fetched
+    if playlist.source_id in fetching:
+        raise HTTPException(status_code=400, detail="Playlist is being fetched")
+
+    redownload_all = request_data.redownload_all or False
+    # Start the download process
+    asyncio.create_task(download_playlist(playlist, redownload_all))
+
+    return {"message": "Download started", "playlist_id": playlist_id}
+
+
+@router.get("/{playlist_id}/download_status")
+async def get_playlist_download_status(playlist_id: str):
+    """
+    Récupérer le statut de téléchargement d'une playlist par son ID
+    """
+    print(downloading)
+    if playlist_id in downloading:
+        return {"message": "Playlist is being downloaded", "is_downloading": True}
+    else:
+        return {"message": "Playlist is not being downloaded", "is_downloading": False}
+
+
+@router.get("/{playlist_id}/videos/{video_id}/download_status")
+async def get_video_download_status(playlist_id: str, video_id: str, db: AsyncSession = Depends(get_db)):
+    """
+    Récupérer le statut de téléchargement d'une vidéo par son ID
+    """
+    result = await db.execute(select(Playlist).where(Playlist.source_id == playlist_id))
+    playlist = result.scalars().first()
+    if not playlist:
+        raise HTTPException(status_code=404, detail="Playlist not found")
+    
+    result = await db.execute(select(Video).where(Video.source_id == video_id))
+    video = result.scalars().first()
+    if not video:
+        raise HTTPException(status_code=404, detail="Video not found")
+
+    result = await db.execute(
+        select(PlaylistVideo)
+        .where(PlaylistVideo.playlist_id == playlist.id, PlaylistVideo.video_id == video.id)
+    )
+    playlist_video = result.scalars().first()
+
+    if not playlist_video:
+        raise HTTPException(status_code=404, detail="Video not found in the playlist")
+
+    return {
+        "status": playlist_video.state,
+        "video_id": video_id,
+        "playlist_id": playlist_id
+    }
+
