@@ -23,8 +23,6 @@ async def start_download_playlist(playlist_id: str, db: AsyncSession, redownload
     """
     nb_download_failed = 0
 
-    print(redownloadAll)
-
     # Re-fetch the playlist with videos and PlaylistVideo relation
     if redownloadAll:
         result = await db.execute(
@@ -74,13 +72,13 @@ async def start_download_playlist(playlist_id: str, db: AsyncSession, redownload
         })
 
         try:
-            result, stderr = await start_download_video(playlist, video)
+            success, stderr = await start_download_video(playlist, video)
         except Exception as e:
             print(f"Error downloading video {video.title}: {e}")
-            result = None, 0
+            success = None
 
         # Update state based on result
-        if result == 0:
+        if success:
             playlist_video.state = DownloadState.DOWNLOADED
         else:
             playlist_video.state = DownloadState.ERROR
@@ -89,7 +87,7 @@ async def start_download_playlist(playlist_id: str, db: AsyncSession, redownload
         await db.commit()
         await db.refresh(playlist_video)
 
-        if result == 0:
+        if success:
             await ws_manager.send_message("playlists", {
                 "playlist_id": playlist.source_id,
                 "video_id": video.source_id,

@@ -77,7 +77,7 @@ async def start_download_video(playlist: Playlist, video: Video):
         returncode = await process.wait()
         stderr = await process.stderr.read()
         print(returncode, stderr.decode())
-        return returncode != 0, stderr
+        return returncode == 0, stderr
 
     except Exception as e:
         return 1, str(e)
