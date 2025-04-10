@@ -3,7 +3,7 @@
 import Image from "next/image";
 import { useRouter, useParams } from "next/navigation";
 import useSWR, { mutate } from "swr";
-import { Calendar, User, Video, Download, Film, Captions, ArrowLeft } from "lucide-react";
+import { Calendar, User, Video, Film, Captions, ArrowLeft } from "lucide-react";
 import { PlaylistDetails, VideoDetails, DownloadQuality } from "@/types/models";
 import axios from "axios";
 import {
@@ -18,6 +18,7 @@ import { useState } from "react";
 import { useEffect } from "react";
 import InteractiveButtons from "@/components/playlists/InteractiveButtons";
 import NumberOfVideosDownloaded from "@/components/playlists/NumberOfVideosDownloaded";
+import { formatDate } from "@/utils/formatDate";
 
 
 const fetcher = (url: string) => axios.get(url).then((res) => res.data);
@@ -225,7 +226,7 @@ export default function PlaylistDetail() {
             <div className="flex items-center justify-center md:justify-start gap-2">
               <Calendar size={16} /> Last video published:{" "}
               <span className="text-gray-400 font-medium">
-                {playlist.last_published ?? "N/A"}
+                {formatDate(playlist.last_published) ?? "N/A"}
               </span>
             </div>
 

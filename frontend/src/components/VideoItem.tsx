@@ -5,6 +5,7 @@ import VideoStatus from "./buttons/VideoStatus";
 import useSWR from "swr";
 import { endpointPlaylists } from "@/constants/endpoints";
 import axios from "axios";
+import { formatDate } from "@/utils/formatDate";
 
 type VideoItemProps = {
   playlist_id: string;
@@ -56,7 +57,7 @@ export const VideoItem = ({
           ⏳ {video.duration} • 📺 {video.quality}
         </p>
         <p className="text-gray-500 text-xs mt-1">
-          Published: {video.upload_date}
+          Published: {formatDate(video.upload_date)}
         </p>
       </div>
 
