@@ -3,7 +3,7 @@
 import Image from "next/image";
 import { useRouter, useParams } from "next/navigation";
 import useSWR, { mutate } from "swr";
-import { Calendar, User, Video, Film, Captions, ArrowLeft } from "lucide-react";
+import { Calendar, User, Video, Film, Captions, ArrowLeft, FolderDown } from "lucide-react";
 import { PlaylistDetails, VideoDetails, DownloadQuality } from "@/types/models";
 import axios from "axios";
 import {
@@ -19,9 +19,8 @@ import { useEffect } from "react";
 import InteractiveButtons from "@/components/playlists/InteractiveButtons";
 import NumberOfVideosDownloaded from "@/components/playlists/NumberOfVideosDownloaded";
 import { formatDate } from "@/utils/formatDate";
+import { fetcher } from "@/utils/fetcher";
 
-
-const fetcher = (url: string) => axios.get(url).then((res) => res.data);
 
 export default function PlaylistDetail() {
   const { id } = useParams();
@@ -195,15 +194,17 @@ export default function PlaylistDetail() {
 
   return (
     <div className="p-3 md:p-6 pb-24">
-      <button
+      {/* <button
         onClick={() => router.push("/playlists")}
         className="flex items-center text-gray-300 hover:text-white mb-4"
       >
         <ArrowLeft size={20} className="mr-2" /> Back to Playlists
-      </button>
+      </button> */}
 
       {/* Playlist Header */}
-      <div className="bg-gray-900 text-gray-200 p-6 rounded-lg shadow-md flex flex-col lg:flex-row items-center lg:items-start">
+      <div className="bg-gray-900 text-gray-200 p-6 rounded-lg [&_*_span]:font-medium shadow-md flex flex-col lg:flex-row items-center"> 
+        {/* [&_*_span] selection tous les span enfants */}
+
         {/* Playlist Thumbnail */}
         <Image
           src={playlist.thumbnail || "/404_page-not-found.webp"}
@@ -211,55 +212,60 @@ export default function PlaylistDetail() {
           priority={true}
           width={200}
           height={100}
-          className="rounded-lg shadow-lg mb-4 md:mb-0 md:mr-6 w-full max-w-[400px] h-auto aspect-video object-cover"
+          className="rounded-lg shadow-lg mb-4 lg:mb-0 lg:mr-6 w-full max-w-[400px] h-auto aspect-video object-cover"
         />
 
         {/* Playlist Info */}
-        <div className="flex-1 text-center md:text-left md:mt-2">
-          <h1 className="text-xl md:text-2xl font-bold">{playlist.title}</h1>
+        <div className="flex-1 flex flex-col gap-2 font-bold text-sm min-w-fit">
+          <h1 className="text-xl text-center md:text-2xl lg:text-left">{playlist.title}</h1>
 
-          <div className="mt-2 font-bold flex flex-col gap-1 text-sm text-gray-300">
-            <div className="flex items-center justify-center md:justify-start gap-2">
+          <div className="lg:mt-2 flex flex-col gap-2">
+            <div className="flex items-center gap-2">
               <User size={16} /> {playlist.uploader.name ?? "Unknown"}
             </div>
 
-            <div className="flex items-center justify-center md:justify-start gap-2">
+            <div className="flex items-center gap-2">
               <Calendar size={16} /> Last video published:{" "}
-              <span className="text-gray-400 font-medium">
-                {formatDate(playlist.last_published) ?? "N/A"}
-              </span>
-            </div>
-
-            <div className="flex items-center justify-center md:justify-start gap-2">
-              <span className="font-mono text-xs bg-gray-700 px-2 py-0.5 rounded">
-                {playlist.folder}
+              <span>
+                {formatDate(playlist.last_published) ?? "unknown"}
               </span>
             </div>
           </div>
 
           {/* Playlist Settings */}
-          <div className="hidden lg:grid grid-cols-2 gap-x-6 gap-y-2 max-w-80 mt-4 text-sm text-gray-300 font-bold">
+          <div className="hidden lg:grid grid-cols-2 gap-x-6 gap-y-2 max-w-80">
             <div className="flex items-center gap-2">
               <Calendar size={16} />Check:{" "}
-                <span className="font-medium">{playlist.check_every_day ? "Every day" : "Never"}</span>
+                <span>{playlist.check_every_day ? "Every day" : "Never"}</span>
             </div>
             <div className="flex items-center gap-2">
               <Film size={16} />
                   Format:{" "}
-                <span className="font-medium">{playlist.default_format}</span>
+                <span>{playlist.default_format}</span>
             </div>
             <div className="flex items-center gap-2">
               <Video size={16} />
                 Quality:{" "}
-                <span className="font-medium">{(qualityKey || "None").replace("q_", "").toUpperCase()}</span>
+                <span>{(qualityKey || "None").replace("q_", "").toUpperCase()}</span>
             </div>
             <div className="flex items-center gap-2">
               <Captions size={16} />
                 Subtitles:{" "}
-                <span className="font-medium">{playlist.default_subtitles ? "Yes" : "No"}</span>
+                <span>{playlist.default_subtitles ? "Yes" : "No"}</span>
             </div>
-            <NumberOfVideosDownloaded playlist_id={playlist.id} />
           </div>
+
+
+          <div className="flex items-center gap-2">
+            <FolderDown size={16} />
+              Folder:{" "}
+              <span className="font-mono bg-gray-700 px-2 rounded">
+                {playlist.folder}
+              </span>
+          </div>
+            
+          <NumberOfVideosDownloaded playlist_id={playlist.id} />
+
         </div>
 
         <InteractiveButtons
