@@ -3,7 +3,7 @@
 import Image from "next/image";
 import { useRouter, useParams } from "next/navigation";
 import useSWR, { mutate } from "swr";
-import { Calendar, User, Video, Film, Captions, ArrowLeft, FolderDown } from "lucide-react";
+import { Calendar, User, Video, Film, Captions, FolderDown } from "lucide-react";
 import { PlaylistDetails, VideoDetails, DownloadQuality } from "@/types/models";
 import axios from "axios";
 import {
@@ -20,7 +20,7 @@ import InteractiveButtons from "@/components/playlists/InteractiveButtons";
 import NumberOfVideosDownloaded from "@/components/playlists/NumberOfVideosDownloaded";
 import { formatDate } from "@/utils/formatDate";
 import { fetcher } from "@/utils/fetcher";
-
+import { useThumbnailModal, ThumbnailModal } from "@/components/modals/ThumbnailModal";
 
 export default function PlaylistDetail() {
   const { id } = useParams();
@@ -33,6 +33,8 @@ export default function PlaylistDetail() {
 
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [isDownloading, setIsDownloading] = useState(false);
+  
+  const { isOpen: isThumbnailOpen, thumbnailUrl, openModal: openThumbnailModal, closeModal: closeThumbnailModal } = useThumbnailModal();
 
   const { getProgress, getDownloadStage } = useDownloadProgress(String(id));
 
@@ -44,7 +46,7 @@ export default function PlaylistDetail() {
 
       if (data.fetch_success === true) {
         console.log("WebSocket message received from Playlist Details:", data);
-        mutate(`${endpointPlaylists}/${id}/number_of_videos_downloaded`)
+        mutate(`${endpointPlaylists}/${id}/number_of_videos_downloaded`);
         mutate(`${endpointPlaylists}/${id}/details`);
         setIsRefreshing(false);
       } else if (data.fetch_success === false) {
@@ -67,7 +69,11 @@ export default function PlaylistDetail() {
           if (data.nb_download_failed === 0) {
             toast.success("Playlist downloaded successfully.");
           } else {
-            toast.error(`Playlist downloaded with ${data.nb_download_failed}${data.total_to_download ? "/" + data.total_to_download : "" } fails.`);
+            toast.error(
+              `Playlist downloaded with ${data.nb_download_failed}${
+                data.total_to_download ? "/" + data.total_to_download : ""
+              } fails.`
+            );
           }
         }
 
@@ -98,11 +104,11 @@ export default function PlaylistDetail() {
         console.error("Error checking playlist refresh status:", error);
       });
 
-      fetch(`${endpointPlaylists}/${id}/download_status`)
+    fetch(`${endpointPlaylists}/${id}/download_status`)
       .then((res) => res.json())
       .then((data) => {
         if (data.is_downloading && isMounted) {
-            toast.info(`Playlist is being downloaded.`);
+          toast.info(`Playlist is being downloaded.`);
           setIsDownloading(true);
         }
       })
@@ -115,7 +121,6 @@ export default function PlaylistDetail() {
     };
   }, [id]);
 
-
   const handleRefresh = async () => {
     if (isRefreshing) return;
     setIsRefreshing(true);
@@ -126,7 +131,6 @@ export default function PlaylistDetail() {
       });
 
       if (!response.ok) throw new Error("Failed to refresh playlist");
-
     } catch (error) {
       toast.error("Failed to refresh playlist");
       console.error("Error refreshing playlist:", error);
@@ -148,13 +152,12 @@ export default function PlaylistDetail() {
       });
 
       if (!response.ok) throw new Error("Failed to download playlist");
-
     } catch (error) {
       toast.error("Failed to start the download of the playlist");
       console.error("Error downloading playlist:", error);
       setIsDownloading(false);
     }
-  }
+  };
 
   if (isLoading) {
     return (
@@ -182,7 +185,6 @@ export default function PlaylistDetail() {
     } catch (error) {
       console.error("Download failed:", error);
     } finally {
-    
     }
   };
 
@@ -202,7 +204,7 @@ export default function PlaylistDetail() {
       </button> */}
 
       {/* Playlist Header */}
-      <div className="bg-gray-900 text-gray-200 p-6 rounded-lg [&_*_span]:font-medium shadow-md flex flex-col lg:flex-row items-center"> 
+      <div className="bg-gray-900 text-gray-200 p-6 rounded-lg [&_*_span]:font-medium shadow-md flex flex-col lg:flex-row items-center">
         {/* [&_*_span] selection tous les span enfants */}
 
         {/* Playlist Thumbnail */}
@@ -212,12 +214,22 @@ export default function PlaylistDetail() {
           priority={true}
           width={200}
           height={100}
-          className="rounded-lg shadow-lg mb-4 lg:mb-0 lg:mr-6 w-full max-w-[400px] h-auto aspect-video object-cover"
+          onClick={ () => openThumbnailModal(playlist.thumbnail || "/404_page-not-found.webp") }
+          className="rounded-lg shadow-lg mb-4 lg:mb-0 lg:mr-6 w-full cursor-zoom-in max-w-[400px] h-auto aspect-video object-cover
+          transition-all duration-300 hover:shadow-xl hover:scale-[1.03]"
+        />
+
+        <ThumbnailModal
+          isOpen={isThumbnailOpen}
+          thumbnailUrl={thumbnailUrl}
+          closeModal={closeThumbnailModal}
         />
 
         {/* Playlist Info */}
         <div className="flex-1 flex flex-col gap-2 font-bold text-sm min-w-fit">
-          <h1 className="text-xl text-center md:text-2xl lg:text-left">{playlist.title}</h1>
+          <h1 className="text-xl text-center md:text-2xl lg:text-left">
+            {playlist.title}
+          </h1>
 
           <div className="lg:mt-2 flex flex-col gap-2">
             <div className="flex items-center gap-2">
@@ -226,46 +238,44 @@ export default function PlaylistDetail() {
 
             <div className="flex items-center gap-2">
               <Calendar size={16} /> Last video published:{" "}
-              <span>
-                {formatDate(playlist.last_published) ?? "unknown"}
-              </span>
+              <span>{formatDate(playlist.last_published) ?? "unknown"}</span>
             </div>
           </div>
 
           {/* Playlist Settings */}
           <div className="hidden lg:grid grid-cols-2 gap-x-6 gap-y-2 max-w-80">
             <div className="flex items-center gap-2">
-              <Calendar size={16} />Check:{" "}
-                <span>{playlist.check_every_day ? "Every day" : "Never"}</span>
+              <Calendar size={16} />
+              Check:{" "}
+              <span>{playlist.check_every_day ? "Every day" : "Never"}</span>
             </div>
             <div className="flex items-center gap-2">
               <Film size={16} />
-                  Format:{" "}
-                <span>{playlist.default_format}</span>
+              Format: <span>{playlist.default_format}</span>
             </div>
             <div className="flex items-center gap-2">
               <Video size={16} />
-                Quality:{" "}
-                <span>{(qualityKey || "None").replace("q_", "").toUpperCase()}</span>
+              Quality:{" "}
+              <span>
+                {(qualityKey || "None").replace("q_", "").toUpperCase()}
+              </span>
             </div>
             <div className="flex items-center gap-2">
               <Captions size={16} />
-                Subtitles:{" "}
-                <span>{playlist.default_subtitles ? "Yes" : "No"}</span>
+              Subtitles:{" "}
+              <span>{playlist.default_subtitles ? "Yes" : "No"}</span>
             </div>
           </div>
 
-
           <div className="flex items-center gap-2">
             <FolderDown size={16} />
-              Folder:{" "}
-              <span className="font-mono bg-gray-700 px-2 rounded">
-                {playlist.folder}
-              </span>
+            Folder:{" "}
+            <span className="font-mono bg-gray-700 px-2 rounded">
+              {playlist.folder}
+            </span>
           </div>
-            
-          <NumberOfVideosDownloaded playlist_id={playlist.id} />
 
+          <NumberOfVideosDownloaded playlist_id={playlist.id} />
         </div>
 
         <InteractiveButtons
@@ -289,6 +299,7 @@ export default function PlaylistDetail() {
               progress={getProgress(video.id)}
               download_stage={getDownloadStage(video.id)}
               onDownload={handleVideoDownload}
+              openThumbnailModal={openThumbnailModal}
             />
           ))}
         </div>

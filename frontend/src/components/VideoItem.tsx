@@ -6,6 +6,7 @@ import useSWR from "swr";
 import { endpointPlaylists } from "@/constants/endpoints";
 import axios from "axios";
 import { formatDate } from "@/utils/formatDate";
+import { useState } from "react";
 
 type VideoItemProps = {
   playlist_id: string;
@@ -13,6 +14,7 @@ type VideoItemProps = {
   progress: number | undefined;
   download_stage: string;
   onDownload: (videoId: string) => void;
+  openThumbnailModal: (url: string) => void;
 };
 
 const fetcher = (url: string) => axios.get(url).then((res) => res.data);
@@ -23,6 +25,7 @@ export const VideoItem = ({
   progress,
   download_stage,
   onDownload,
+  openThumbnailModal,
 }: VideoItemProps) => {
 
   const { data: download_status, error, isLoading } = useSWR(`${endpointPlaylists}/${playlist_id}/videos/${video.id}/download_status`, fetcher);
@@ -45,7 +48,9 @@ export const VideoItem = ({
         alt={video.title}
         width={120}
         height={68}
-        className="rounded-md h-auto shadow-md"
+        className="rounded-md h-auto shadow-md cursor-zoom-in transition-all duration-300 hover:shadow-xl hover:scale-[1.05]"
+        onClick={() => openThumbnailModal(video.thumbnail)}
+        priority={true}
       />
 
       <div className="ml-4 flex-1">
