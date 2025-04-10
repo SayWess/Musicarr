@@ -44,6 +44,8 @@ export default function PlaylistDetail() {
 
       if (data.fetch_success === true) {
         console.log("WebSocket message received from Playlist Details:", data);
+        mutate(`${endpointPlaylists}/${id}/number_of_videos_downloaded`)
+        mutate(`${endpointPlaylists}/${id}/details`);
         setIsRefreshing(false);
       } else if (data.fetch_success === false) {
         setIsRefreshing(false);
@@ -69,8 +71,6 @@ export default function PlaylistDetail() {
           }
         }
 
-      
-        // mutate(`${endpointPlaylists}/${id}/details`);
         console.log("Playlist downloaded successfully.");
       } else if (data.download_success === false) {
         setIsDownloading(false);
@@ -102,7 +102,7 @@ export default function PlaylistDetail() {
       .then((res) => res.json())
       .then((data) => {
         if (data.is_downloading && isMounted) {
-          toast.info(`Playlist is being downloaded.`);
+            toast.info(`Playlist is being downloaded.`);
           setIsDownloading(true);
         }
       })
@@ -127,7 +127,6 @@ export default function PlaylistDetail() {
 
       if (!response.ok) throw new Error("Failed to refresh playlist");
 
-      // mutate(`${endpointPlaylists}/${id}/details`);
     } catch (error) {
       toast.error("Failed to refresh playlist");
       console.error("Error refreshing playlist:", error);

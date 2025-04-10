@@ -47,7 +47,12 @@ async def fetch_playlist_info(playlist_url):
         stdout, stderr = await process.communicate()
         
         if process.returncode != 0:
-            print(f"yt-dlp error: {stderr.decode()}")
+            stderr = stderr.decode()
+            print(f"yt-dlp error: {stderr}")
+            if "Sign in to confirm your age" in stderr:
+                playlist_info = json.loads(stdout.decode())
+                return playlist_info
+            
             return None
 
         playlist_info = json.loads(stdout.decode())
@@ -135,6 +140,10 @@ async def fetch_and_store_playlist_info(playlist_url, db: AsyncSession):
 
     # Step 4: Process each video in the playlist
     for entry in playlist_info.get("entries", []):
+        if not entry:
+            print("No video found in entry:", entry)
+            continue
+
         print("Video id", entry.get("id"))
         result = await db.execute(
             select(Video).filter(Video.source_id == entry.get('id'))
@@ -227,12 +236,12 @@ async def fetch_full_playlist(playlist_id: str, playlist_title: str = None):
         print(f"Failed to fetch playlist info for {playlist_id}.")
         await ws_manager.send_message(
             "playlists", 
-            {"playlist_id": playlist_id, "fetch_success": False, "playlist_title": playlist_title, "message": "Failed to fetch playlist info" }
+            {"playlist_id": playlist_id, "fetch_success": False, "playlist_title": playlist_title or playlist_id, "message": "Failed to fetch playlist info" }
         )
     else:
         print(f"Fetched full playlist info for {playlist_id}.")
 
         await ws_manager.send_message(
             "playlists", 
-            {"playlist_id": playlist_id, "fetch_success": True, "playlist_title": playlist_title, "message": "Fetched full playlist info" }
+            {"playlist_id": playlist_id, "fetch_success": True, "playlist_title": playlist_title or result or playlist_id, "message": "Fetched full playlist info" }
         )
