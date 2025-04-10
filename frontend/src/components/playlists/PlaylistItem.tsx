@@ -144,7 +144,7 @@ export const PlaylistItem = ({ playlist }: { playlist: Playlist }) => {
           ) : (
             <span>{data.total_videos !== data.downloaded_videos ? data.total_videos - data.downloaded_videos : ""}</span>
           )}
-          {/* {hasMissingVideos ? `${playlist.missing_videos}` : ""} */}
+
         </span>
       </div>
     </Link>
