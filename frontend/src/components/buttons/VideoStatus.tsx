@@ -41,7 +41,7 @@ const VideoStatus = ({ video, progress, download_stage, onDownload, download_sta
               className="text-blue-400 hover:text-blue-300 flex items-center gap-2 px-3 py-2 border border-blue-400 rounded-lg transition"
               onClick={() => onDownload(video.id)}
             >
-              <Download size={20} />
+              <Download size={16} className="md:w-[20px] md:h-auto" />
               <span className="text-sm hidden md:inline">Download</span>
             </button>
     )

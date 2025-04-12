@@ -48,13 +48,13 @@ export const VideoItem = ({
         alt={video.title}
         width={120}
         height={68}
-        className="rounded-md h-auto shadow-md cursor-zoom-in transition-all duration-300 hover:shadow-xl hover:scale-[1.05]"
+        className="rounded-md h-auto w-20 md:w-auto shadow-md cursor-zoom-in transition-all duration-300 hover:shadow-xl hover:scale-[1.05]"
         onClick={() => openThumbnailModal(video.thumbnail)}
         priority={true}
       />
 
       <div className="ml-4 flex-1">
-        <h3 className="text-sm md:text-lg font-semibold line-clamp-2">
+        <h3 className="text-xs md:text-lg font-semibold line-clamp-2">
           {video.title}
         </h3>
 

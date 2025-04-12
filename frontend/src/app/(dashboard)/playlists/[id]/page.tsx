@@ -1,9 +1,17 @@
 "use client";
 
+import "./page.css";
 import Image from "next/image";
 import { useRouter, useParams } from "next/navigation";
 import useSWR, { mutate } from "swr";
-import { Calendar, User, Video, Film, Captions, FolderDown } from "lucide-react";
+import {
+  Calendar,
+  User,
+  Video,
+  Film,
+  Captions,
+  FolderDown,
+} from "lucide-react";
 import { PlaylistDetails, VideoDetails, DownloadQuality } from "@/types/models";
 import axios from "axios";
 import {
@@ -20,7 +28,10 @@ import InteractiveButtons from "@/components/playlists/InteractiveButtons";
 import NumberOfVideosDownloaded from "@/components/playlists/NumberOfVideosDownloaded";
 import { formatDate } from "@/utils/formatDate";
 import { fetcher } from "@/utils/fetcher";
-import { useThumbnailModal, ThumbnailModal } from "@/components/modals/ThumbnailModal";
+import {
+  useThumbnailModal,
+  ThumbnailModal,
+} from "@/components/modals/ThumbnailModal";
 
 export default function PlaylistDetail() {
   const { id } = useParams();
@@ -33,8 +44,13 @@ export default function PlaylistDetail() {
 
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [isDownloading, setIsDownloading] = useState(false);
-  
-  const { isOpen: isThumbnailOpen, thumbnailUrl, openModal: openThumbnailModal, closeModal: closeThumbnailModal } = useThumbnailModal();
+
+  const {
+    isOpen: isThumbnailOpen,
+    thumbnailUrl,
+    openModal: openThumbnailModal,
+    closeModal: closeThumbnailModal,
+  } = useThumbnailModal();
 
   const { getProgress, getDownloadStage } = useDownloadProgress(String(id));
 
@@ -204,7 +220,7 @@ export default function PlaylistDetail() {
       </button> */}
 
       {/* Playlist Header */}
-      <div className="bg-gray-900 text-gray-200 p-6 rounded-lg [&_*_span]:font-medium shadow-md flex flex-col lg:flex-row items-center">
+      <div className="bg-gray-900 text-gray-200 p-4 md:p-6 rounded-lg [&_*_span]:font-medium shadow-md flex flex-col lg:flex-row items-center gap-6">
         {/* [&_*_span] selection tous les span enfants */}
 
         {/* Playlist Thumbnail */}
@@ -214,8 +230,10 @@ export default function PlaylistDetail() {
           priority={true}
           width={200}
           height={100}
-          onClick={ () => openThumbnailModal(playlist.thumbnail || "/404_page-not-found.webp") }
-          className="rounded-lg shadow-lg mb-4 lg:mb-0 lg:mr-6 w-full cursor-zoom-in max-w-[400px] h-auto aspect-video object-cover
+          onClick={() =>
+            openThumbnailModal(playlist.thumbnail || "/404_page-not-found.webp")
+          }
+          className="rounded-lg shadow-lg w-full flex-1 cursor-zoom-in max-w-[400px] min-w-[200px] h-auto aspect-video object-cover
           transition-all duration-300 hover:shadow-xl hover:scale-[1.03]"
         />
 
@@ -226,56 +244,60 @@ export default function PlaylistDetail() {
         />
 
         {/* Playlist Info */}
-        <div className="flex-1 flex flex-col gap-2 font-bold text-sm min-w-fit">
-          <h1 className="text-xl text-center md:text-2xl lg:text-left">
+        <div className="container-playlist-info items-center lg:items-start gap-2">
+          <h1 className="line-clamp-2 text-center text-xl md:text-2xl lg:text-left">
             {playlist.title}
           </h1>
 
-          <div className="lg:mt-2 flex flex-col gap-2">
-            <div className="flex items-center gap-2">
-              <User size={16} /> {playlist.uploader.name ?? "Unknown"}
+          <div className="flex flex-col items-start max-w-[100%] lg:contents gap-2">
+            <div className="lg:mt-2 flex flex-col gap-2">
+              <div className="flex items-center clamp gap-2">
+                <User size={16} className="min-w-fit" />{" "}
+                {playlist.uploader.name ?? "Unknown"}
+              </div>
+
+              <div className="flex items-center gap-2">
+                <Calendar size={16} className="min-w-fit" /> Last video
+                published:{" "}
+                <span>{formatDate(playlist.last_published) ?? "unknown"}</span>
+              </div>
             </div>
 
-            <div className="flex items-center gap-2">
-              <Calendar size={16} /> Last video published:{" "}
-              <span>{formatDate(playlist.last_published) ?? "unknown"}</span>
+            {/* Playlist Settings */}
+            <div className="hidden lg:grid grid-cols-2 gap-x-6 gap-y-2 max-w-80 min-w-fit ">
+              <div className="flex items-center gap-2">
+                <Calendar size={16} className="min-w-fit" />
+                Check:{" "}
+                <span>{playlist.check_every_day ? "Every day" : "Never"}</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <Film size={16} className="min-w-fit" />
+                Format: <span>{playlist.default_format}</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <Video size={16} className="min-w-fit" />
+                Quality:{" "}
+                <span>
+                  {(qualityKey || "None").replace("q_", "").toUpperCase()}
+                </span>
+              </div>
+              <div className="flex items-center gap-2">
+                <Captions size={16} className="min-w-fit" />
+                Subtitles:{" "}
+                <span>{playlist.default_subtitles ? "Yes" : "No"}</span>
+              </div>
             </div>
-          </div>
 
-          {/* Playlist Settings */}
-          <div className="hidden lg:grid grid-cols-2 gap-x-6 gap-y-2 max-w-80">
-            <div className="flex items-center gap-2">
-              <Calendar size={16} />
-              Check:{" "}
-              <span>{playlist.check_every_day ? "Every day" : "Never"}</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <Film size={16} />
-              Format: <span>{playlist.default_format}</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <Video size={16} />
-              Quality:{" "}
-              <span>
-                {(qualityKey || "None").replace("q_", "").toUpperCase()}
+            <div className="flex items-center gap-2" style={{ maxWidth: "inherit" }}>
+              <FolderDown size={16} className="min-w-fit" />
+              Folder:{" "}
+              <span className="bg-gray-700 px-2 truncate rounded">
+                {playlist.folder}
               </span>
             </div>
-            <div className="flex items-center gap-2">
-              <Captions size={16} />
-              Subtitles:{" "}
-              <span>{playlist.default_subtitles ? "Yes" : "No"}</span>
-            </div>
-          </div>
 
-          <div className="flex items-center gap-2">
-            <FolderDown size={16} />
-            Folder:{" "}
-            <span className="font-mono bg-gray-700 px-2 rounded">
-              {playlist.folder}
-            </span>
+            <NumberOfVideosDownloaded playlist_id={playlist.id} />
           </div>
-
-          <NumberOfVideosDownloaded playlist_id={playlist.id} />
         </div>
 
         <InteractiveButtons
@@ -290,7 +312,7 @@ export default function PlaylistDetail() {
 
       {/* Video List */}
       <div className="mt-6">
-        <div className="space-y-4">
+        <div className="space-y-2 lg:space-y-4">
           {playlist.videos.map((video: VideoDetails) => (
             <VideoItem
               key={video.id}

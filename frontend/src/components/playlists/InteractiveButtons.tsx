@@ -50,7 +50,7 @@ const InteractiveButtons = ({
   };
 
   return (
-    <div className="flex lg:flex-col gap-4 justify-around self-center mt-4">
+    <div className="flex lg:flex-col gap-4 justify-around self-center">
 
 
       <EditButton onClick={openEdit} />
