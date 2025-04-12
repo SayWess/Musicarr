@@ -49,7 +49,7 @@ async def fetch_playlist_info(playlist_url):
         if process.returncode != 0:
             stderr = stderr.decode()
             print(f"yt-dlp error: {stderr}")
-            if "Sign in to confirm your age" in stderr:
+            if "Sign in" in stderr:
                 playlist_info = json.loads(stdout.decode())
                 return playlist_info
             
