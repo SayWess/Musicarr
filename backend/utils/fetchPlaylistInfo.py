@@ -91,16 +91,19 @@ async def fetch_and_store_playlist_info(playlist_url, db: AsyncSession):
 
     if not uploader:
         # Create a new uploader if not found
-        uploader = Uploader(
-            channel_id=playlist_info.get("channel_id"),
-            name=playlist_info.get("uploader"),
-            channel_url=playlist_info.get("channel_url") or f"https://www.youtube.com/channel/{playlist_info.get('channel_id')}"
-        )
-        db.add(uploader)
-        await db.flush()
-        print("Created new uploader:", uploader.name)
+        if playlist_info.get("channel_id") and playlist_info.get("uploader"):
+            uploader = Uploader(
+                channel_id=playlist_info.get("channel_id"),
+                name=playlist_info.get("uploader"),
+                channel_url=playlist_info.get("channel_url") or f"https://www.youtube.com/channel/{playlist_info.get('channel_id')}"
+            )
+            db.add(uploader)
+            await db.flush()
+            print("Created new uploader:", uploader.name)
     
-    await db.commit()  # Commit uploader creation
+            await db.commit()  # Commit uploader creation
+        
+    
 
     # Step 3: Create the playlist entry
     result = await db.execute(
@@ -110,13 +113,15 @@ async def fetch_and_store_playlist_info(playlist_url, db: AsyncSession):
 
     first_entry = playlist_info.get("entries", [])[0]  if playlist_info.get("entries") else {}
 
+    last_published = max([video.get("upload_date") for video in playlist_info.get("entries", [])]) or None
+
     if playlist:
        # Update existing playlist
         playlist.title = sanitize_title(playlist_info.get("title"))
         playlist.description = playlist_info.get("description")
         playlist.thumbnail = first_entry.get("thumbnail")
-        playlist.last_published = first_entry.get("upload_date")
-        playlist.uploader_id=uploader.id
+        playlist.last_published = last_published
+        playlist.uploader_id=uploader.id if uploader else None
 
         print("Updated existing playlist:", playlist.title)
     
@@ -127,8 +132,8 @@ async def fetch_and_store_playlist_info(playlist_url, db: AsyncSession):
             title=sanitize_title(playlist_info.get("title")),
             description=playlist_info.get("description"),
             thumbnail=first_entry.get("thumbnail"),
-            uploader_id=uploader.id,
-            last_published=first_entry.get("upload_date")
+            uploader_id=uploader.id if uploader else None,
+            last_published=last_published
         )
         db.add(playlist)
         await db.flush() # Flush to get the playlist ID
@@ -163,15 +168,16 @@ async def fetch_and_store_playlist_info(playlist_url, db: AsyncSession):
                     uploader.url = entry.get("uploader_url")
             else:
                 # Create a new uploader if not found
-                uploader = Uploader(
-                    source_id=entry.get("uploader_id"),
-                    name=entry.get("uploader"),
-                    url=entry.get("uploader_url"),
-                    channel_id=entry.get("channel_id"),
-                    channel_url=entry.get("channel_url") or f"https://www.youtube.com/channel/{entry.get('uploader_id')}"
-                )
-                db.add(uploader)
-                print("Created new uploader:", uploader.name)
+                if entry.get("uploader") and entry.get("channel_id"):
+                    uploader = Uploader(
+                        source_id=entry.get("uploader_id"),
+                        name=entry.get("uploader"),
+                        url=entry.get("uploader_url"),
+                        channel_id=entry.get("channel_id"),
+                        channel_url=entry.get("channel_url") or f"https://www.youtube.com/channel/{entry.get('uploader_id')}"
+                    )
+                    db.add(uploader)
+                    print("Created new uploader:", uploader.name)
             await db.commit()  # Commit uploader creation
 
             # If the video is not in the database, create a new video
@@ -182,7 +188,7 @@ async def fetch_and_store_playlist_info(playlist_url, db: AsyncSession):
                 thumbnail=entry.get("thumbnail"),
                 upload_date=entry.get("upload_date"),
                 duration=entry.get("duration_string"),
-                uploader_id=uploader.id  # Link the uploader to the video
+                uploader_id=uploader.id if uploader else None  # Link the uploader to the video
             )
             db.add(video)
             await db.flush()
