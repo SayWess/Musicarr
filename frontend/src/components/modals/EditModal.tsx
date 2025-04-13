@@ -114,7 +114,7 @@ const EditModal = ({ isEditOpen, closeEdit, playlist }: EditModalProps) => {
       closeEdit();
     } catch (error) {
       console.error("Error saving options:", error);
-      errorToast({ title: "Error", description: "Failed to save options." });
+      errorToast("Error", "Failed to save options.");
     }
   };
 
