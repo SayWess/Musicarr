@@ -1,5 +1,5 @@
-from fastapi import APIRouter, Depends, HTTPException
-from sqlalchemy.orm import Session, selectinload
+from fastapi import APIRouter, Depends, HTTPException, Query
+from sqlalchemy.orm import selectinload
 from database.database import get_db
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, func
@@ -129,9 +129,13 @@ async def add_playlist(playlist_id: str, db: AsyncSession = Depends(get_db)):
 
     return {"message": "Playlist added", "playlist": new_playlist}
 
-
 @router.get("/{playlist_id}/details")
-async def get_playlist_details(playlist_id: str, db: AsyncSession = Depends(get_db)):
+async def get_playlist_details(
+    playlist_id: str,
+    db: AsyncSession = Depends(get_db),
+    sort_by: str = Query("upload_date", enum=["title", "upload_date", "state"]),
+    order: str = Query("desc", enum=["asc", "desc"]),
+):
     """
     Récupérer les détails d'une playlist avec l'info de l'uploader et les vidéos associées.
     """
@@ -144,14 +148,27 @@ async def get_playlist_details(playlist_id: str, db: AsyncSession = Depends(get_
     
     if not playlist:
         raise HTTPException(status_code=404, detail="Playlist not found")
+    
+    # Mapping of valid sort fields
+    sort_column_map = {
+        "title": Video.title,
+        "upload_date": Video.upload_date,
+        "state": PlaylistVideo.state,
+    }
+
+    sort_column = sort_column_map.get(sort_by, Video.upload_date)
+
+    # Determine sort order
+    sort_expression = sort_column.asc() if order == "asc" else sort_column.desc()
 
     # Fetch related videos correctly
     videos_result = await db.execute(
-        select(Video)
+        select(Video, PlaylistVideo.state)
         .join(PlaylistVideo, PlaylistVideo.video_id == Video.id)
         .where(PlaylistVideo.playlist_id == playlist.id)
+        .order_by(sort_expression)
     )
-    videos = videos_result.scalars().all()
+    videos = videos_result.all()
 
 
     return {
@@ -177,7 +194,7 @@ async def get_playlist_details(playlist_id: str, db: AsyncSession = Depends(get_
                 "duration": video.duration,
                 "upload_date": video.upload_date,
             }
-            for video in videos
+            for video, state in videos
         ]
     }
 
