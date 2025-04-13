@@ -35,7 +35,6 @@ import { VALID_SORT_FIELDS, VALID_ORDERS } from "@/constants/sortFields";
 import successToast from "../toasts/successToast";
 import errorToast from "../toasts/errorToast";
 import infoToast from "../toasts/infoToast";
-import { info } from "console";
 
 type SortField = (typeof VALID_SORT_FIELDS)[number];
 type SortOrder = (typeof VALID_ORDERS)[number];
@@ -226,11 +225,13 @@ export default function PlaylistClient({
   }
 
   const handleVideoDownload = async (videoId: string) => {
+    if (isDownloading) return;
     try {
       await axios.post(`${endpointPlaylists}/${id}/videos/${videoId}/download`);
+      infoToast("Video download started.");
     } catch (error) {
       console.error("Download failed:", error);
-    } finally {
+      errorToast("Failed to start downloading video");
     }
   };
 

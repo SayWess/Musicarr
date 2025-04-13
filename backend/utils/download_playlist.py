@@ -94,20 +94,12 @@ async def start_download_playlist(playlist_id: str, db: AsyncSession, redownload
         await db.commit()
         await db.refresh(playlist_video)
 
-        if success:
-            await ws_manager.send_message("playlists", {
-                "playlist_id": playlist.source_id,
-                "video_id": video.source_id,
-                "video_title": video.title,
-                "status": "finished"
-            })
-        else:
-            await ws_manager.send_message("playlists", {
-                "playlist_id": playlist.source_id,
-                "video_id": video.source_id,
-                "video_title": video.title,
-                "status": "error",
-            })
+        await ws_manager.send_message("playlists", {
+            "playlist_id": playlist.source_id,
+            "video_id": video.source_id,
+            "video_title": video.title,
+            "status": "finished" if success else "error"
+        })
     
     return nb_download_failed, nb_videos_to_download
 

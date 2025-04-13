@@ -304,6 +304,39 @@ async def get_playlist_download_status(playlist_id: str):
     else:
         return {"message": "Playlist is not being downloaded", "is_downloading": False}
 
+from utils.download_video import download_video, downloading_videos
+@router.post("/{playlist_id}/videos/{video_id}/download")
+async def start_video_download(playlist_id: str, video_id: str, db: AsyncSession = Depends(get_db)):
+    """
+    Démarre le téléchargement d'une vidéo par son ID
+    """
+    result = await db.execute(select(Playlist).where(Playlist.source_id == playlist_id))
+    playlist = result.scalars().first()
+    if not playlist:
+        raise HTTPException(status_code=404, detail="Playlist not found") 
+    
+    result = await db.execute(select(Video).where(Video.source_id == video_id))
+    video = result.scalars().first()
+    if not video:
+        raise HTTPException(status_code=404, detail="Video not found")
+
+    result = await db.execute(
+        select(PlaylistVideo)
+        .where(PlaylistVideo.playlist_id == playlist.id, PlaylistVideo.video_id == video.id)
+    )
+    playlist_video = result.scalars().first()
+
+    if not playlist_video:
+        raise HTTPException(status_code=404, detail="Video not found in the playlist")
+    
+    if (playlist_video.playlist_id, playlist_video.video_id) in downloading_videos:
+        raise HTTPException(status_code=400, detail="Video is already being downloaded")
+
+    # Start the download process for the specific video
+    asyncio.create_task(download_video(playlist_video, playlist, video))
+
+    return {"message": "Download started for video", "video_id": video_id}
+
 
 @router.get("/{playlist_id}/videos/{video_id}/download_status")
 async def get_video_download_status(playlist_id: str, video_id: str, db: AsyncSession = Depends(get_db)):
