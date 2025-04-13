@@ -15,8 +15,6 @@ import { fetcher } from "@/utils/fetcher";
 
 export const PlaylistItem = ({ playlist }: { playlist: Playlist }) => {
   const { toggleCheckEveryDay } = usePlaylists();
-  // const hasMissingVideos = playlist.missing_videos > 0;
-
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [isDownloading, setIsDownloading] = useState(false);
 
@@ -76,9 +74,6 @@ export const PlaylistItem = ({ playlist }: { playlist: Playlist }) => {
     };
   }, [playlist.id]);
 
-  const missing_videos = data?.total_videos - data?.downloaded_videos
-  
-  const hasMissingVideos = missing_videos > 0;
 
   return (
     <Link

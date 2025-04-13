@@ -1,6 +1,6 @@
 export function formatDate(dateStr: string): string {
     if (!/^\d{8}$/.test(dateStr)) {
-      throw new Error("Invalid date format. Expected 'YYYYMMDD'");
+      return "unknown";
     }
   
     const year = dateStr.slice(0, 4);

@@ -1,45 +1,29 @@
 import { toast } from "sonner";
 
-interface ErrorToastProps {
-  title: string;
-  description?: string;
-  duration?: number;
-  onClose?: () => void;
-  onClick?: () => void;
-  onDismiss?: () => void;
-}
-
-const errorToast = ({
-  title,
-  description,
-  duration = 5000,
-  onClose,
-  onClick,
-  onDismiss,
-}: ErrorToastProps) => {
-//   const handleClick = () => {
-//     if (onClick) onClick();
-//     if (onClose) onClose();
-//   };
-
-//   const handleDismiss = () => {
-//     if (onDismiss) onDismiss();
-//   };
-
+const errorToast = (
+  title: string,
+  description?: string,
+  duration: number = 5000,
+  onClose?: () => void,
+  onClick?: () => void,
+  onDismiss?: () => void
+) => {
   toast.error(title, {
-    description: description,
-    duration: duration,
+    description,
+    duration,
     style: {
-        backgroundColor: "#F44336",
-        color: "#FFFFFF",
-        fontWeight: "bold",
-        fontSize: "16px",
+      backgroundColor: "#730400",
+      color: "#FFFFFF",
     },
-    // action: {
+    // If you want to support onClick/onClose/onDismiss again later, re-add this logic:
+    // action: onClick || onClose ? {
     //   label: "Close",
-    //   onClick: handleClick,
-    // },
-    // onDismiss: handleDismiss,
+    //   onClick: () => {
+    //     onClick?.();
+    //     onClose?.();
+    //   }
+    // } : undefined,
+    // onDismiss: onDismiss,
   });
 };
 
