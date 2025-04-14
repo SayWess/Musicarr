@@ -5,7 +5,6 @@ import Image from "next/image";
 import useSWR, { mutate } from "swr";
 import {
   Calendar,
-  User,
   Video,
   Film,
   Captions,
@@ -19,7 +18,6 @@ import {
 } from "@/constants/endpoints";
 import useDownloadProgress from "@/hooks/useDownloadProgress";
 import { VideoItem } from "@/components/VideoItem";
-import { toast } from "sonner";
 import { useWebSocket } from "@/hooks/useWebSocket";
 import { useState } from "react";
 import { useEffect } from "react";
@@ -35,6 +33,7 @@ import { VALID_SORT_FIELDS, VALID_ORDERS } from "@/constants/sortFields";
 import successToast from "../toasts/successToast";
 import errorToast from "../toasts/errorToast";
 import infoToast from "../toasts/infoToast";
+import PlaylistUploader from "./PlaylistUploader";
 
 type SortField = (typeof VALID_SORT_FIELDS)[number];
 type SortOrder = (typeof VALID_ORDERS)[number];
@@ -50,7 +49,6 @@ export default function PlaylistClient({
   initialSortBy: SortField;
   initialSortOrder: SortOrder;
 }) {
-
   // Local state to manage sorting
   const [currentSortBy, setSortBy] = useState<SortField>(initialSortBy);
   const [currentSortOrder, setSortOrder] =
@@ -67,7 +65,7 @@ export default function PlaylistClient({
     error,
     isLoading,
   } = useSWR(`${endpointPlaylists}/${id}/details`, fetcher, {
-    fallbackData: initialPlaylist
+    fallbackData: initialPlaylist,
   });
 
   const [isRefreshing, setIsRefreshing] = useState(false);
@@ -241,6 +239,7 @@ export default function PlaylistClient({
       playlist.default_quality
   );
 
+
   return (
     <div className="p-3 md:p-12 pb-24">
       {/* <button
@@ -282,10 +281,7 @@ export default function PlaylistClient({
 
           <div className="flex flex-col items-start max-w-[100%] lg:contents gap-2">
             <div className="lg:mt-2 flex flex-col gap-2">
-              <div className="flex items-center clamp gap-2">
-                <User size={16} className="min-w-fit" />{" "}
-                {playlist.uploader.name ?? "Unknown"}
-              </div>
+              <PlaylistUploader playlist={playlist} isRefreshing={isRefreshing} />
 
               <div className="flex items-center gap-2">
                 <Calendar size={16} className="min-w-fit" /> Last video

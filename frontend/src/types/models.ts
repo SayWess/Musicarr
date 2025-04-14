@@ -75,5 +75,5 @@ interface VideoDetails {
   upload_date: string;
 }
 
-export type { Playlist, Video, PlaylistDetails, VideoDetails};
+export type { Playlist, Video, PlaylistDetails, VideoDetails, Uploader};
 export { DownloadState, DownloadFormat, DownloadQuality };
