@@ -54,9 +54,9 @@ const InteractiveButtons = ({
 
 
       <EditButton onClick={openEdit} />
-      <DeleteButton onClick={openDelete} isDownloading={isDownloading} />
+      <DeleteButton onClick={openDelete} isRefreshing={isRefreshing} isDownloading={isDownloading} />
       <RefreshButton onClick={onRefresh} isRefreshing={isRefreshing} isDownloading={isDownloading} />
-      <DownloadPlaylistButton onClick={openDownload} isDownloading={isDownloading} />
+      <DownloadPlaylistButton onClick={openDownload} isRefreshing={isRefreshing} isDownloading={isDownloading} />
 
       <DeleteModal
         isDeleteOpen={isDeleteOpen}

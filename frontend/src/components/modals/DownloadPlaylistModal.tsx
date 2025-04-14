@@ -4,9 +4,8 @@ import {
   ModalHeader,
   ModalBody,
   ModalFooter,
-  useModal,
 } from "@/components/modals/Modal";
-import { Button } from "@heroui/button";
+
 
 interface DownloadPlaylistModalProps {
   isDownloadOpen: boolean;
@@ -15,6 +14,7 @@ interface DownloadPlaylistModalProps {
   redownloadAll: boolean;
   setRedownloadAll: (value: boolean) => void;
 }
+
 
 const DownloadPlaylistModal = ({
   isDownloadOpen,

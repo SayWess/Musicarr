@@ -4,8 +4,8 @@ import { VideoDetails } from "@/types/models";
 import VideoStatus from "./buttons/VideoStatus";
 import useSWR from "swr";
 import { endpointPlaylists } from "@/constants/endpoints";
-import axios from "axios";
 import { formatDate } from "@/utils/formatDate";
+import { fetcher } from "@/utils/fetcher";
 
 type VideoItemProps = {
   playlist_id: string;
@@ -16,8 +16,6 @@ type VideoItemProps = {
   openThumbnailModal: (url: string) => void;
 };
 
-const fetcher = (url: string) => axios.get(url).then((res) => res.data);
-
 export const VideoItem = ({
   playlist_id,
   video,
@@ -26,6 +24,7 @@ export const VideoItem = ({
   onDownload,
   openThumbnailModal,
 }: VideoItemProps) => {
+
   const {
     data: download_status,
     error,
@@ -34,7 +33,6 @@ export const VideoItem = ({
     `${endpointPlaylists}/${playlist_id}/videos/${video.id}/download_status`,
     fetcher
   );
-
   const isDownloaded = download_status?.status === "DOWNLOADED";
   const downloading = download_status?.status === "DOWNLOADING";
   const isError = download_status?.status === "ERROR";
