@@ -3,10 +3,12 @@ from sqlalchemy.orm import selectinload
 from database.database import get_db
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, func
-from database.models import Playlist, PlaylistVideo, DownloadState, Video
+from database.models import Playlist, PlaylistVideo, DownloadState, Video, Uploader
 import asyncio
 from utils.fetchPlaylistInfo import fetch_full_playlist
 from utils.download_playlist import download_playlist
+from pydantic import BaseModel
+from typing import Optional
 
 from websocket_manager import ws_manager
 
@@ -129,6 +131,33 @@ async def add_playlist(playlist_id: str, db: AsyncSession = Depends(get_db)):
 
     return {"message": "Playlist added", "playlist": new_playlist}
 
+class UpdateUploaderRequest(BaseModel):
+    uploader_id: Optional[str] = None
+
+@router.put("/{playlist_id}/uploader")
+async def update_playlist_uploader(
+    playlist_id: str,
+    payload: UpdateUploaderRequest,
+    db: AsyncSession = Depends(get_db)
+):
+    if not payload.uploader_id:
+        raise HTTPException(status_code=400, detail="Uploader ID is required")
+    
+    result = await db.execute(select(Playlist).where(Playlist.source_id == playlist_id))
+    playlist = result.scalars().first()
+    if not playlist:
+        raise HTTPException(status_code=404, detail="Playlist not found")
+
+    print(payload)
+    print(payload.uploader_id)
+    uploader = await db.get(Uploader, payload.uploader_id)
+    if not uploader:
+        raise HTTPException(status_code=404, detail="Uploader not found")
+
+    playlist.uploader_id = payload.uploader_id
+    await db.commit()
+    return {"detail": "Uploader updated successfully"}
+
 @router.get("/{playlist_id}/details")
 async def get_playlist_details(
     playlist_id: str,
@@ -182,10 +211,10 @@ async def get_playlist_details(
         "default_quality": playlist.default_quality,
         "default_subtitles": playlist.default_subtitles,
         "uploader": {
-            "id": playlist.uploader.id if playlist.uploader else None,
-            "name": playlist.uploader.name if playlist.uploader else "Unknown",
-            "channel_url": playlist.uploader.channel_url if playlist.uploader else None,
-        },
+            "id": playlist.uploader.id,
+            "name": playlist.uploader.name,
+            "channel_url": playlist.uploader.channel_url,
+        } if playlist.uploader else None,
         "videos": [
             {
                 "id": video.source_id,
@@ -258,8 +287,6 @@ async def is_fetching_playlist(playlist_id: str):
     
 
 from utils.download_playlist import downloading
-from pydantic import BaseModel
-from typing import Optional
 
 class DownloadRequest(BaseModel):
     redownload_all: Optional[bool] = False  # Default to False if not provided

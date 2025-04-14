@@ -31,6 +31,17 @@ async def websocket_endpoint(websocket: WebSocket):
         ws_manager.disconnect("playlists", websocket)
         print("WebSocket disconnected")
 
+@app.websocket("/ws/uploaders")
+async def websocket_uploader_endpoint(websocket: WebSocket):
+    await ws_manager.connect("uploaders", websocket)
+
+    try:
+        while True:
+            await websocket.receive_text()
+    except WebSocketDisconnect:
+        ws_manager.disconnect("uploaders", websocket)
+        print("WebSocket disconnected")
+
 
 @app.get("/api")
 def read_root():
@@ -39,3 +50,7 @@ def read_root():
 
 from api import api_router
 app.include_router(api_router, prefix="/api")
+
+from fastapi.staticfiles import StaticFiles
+
+app.mount("/metadata", StaticFiles(directory="metadata"), name="metadata")

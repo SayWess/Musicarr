@@ -9,6 +9,7 @@ from websocket_manager import ws_manager
 from database.database import SessionLocal
 
 from utils.sanitize import sanitize_title
+from utils.download_uploader_avatar import start_download_avatar
 
 fetching = {}
 
@@ -100,6 +101,9 @@ async def fetch_and_store_playlist_info(playlist_url, db: AsyncSession):
             db.add(uploader)
             await db.flush()
             print("Created new uploader:", uploader.name)
+
+            print("Downloading uploader avatar...")
+            await start_download_avatar(uploader.channel_id, db)  # Download the uploader's avatar
     
             await db.commit()  # Commit uploader creation
         
@@ -178,6 +182,9 @@ async def fetch_and_store_playlist_info(playlist_url, db: AsyncSession):
                     )
                     db.add(uploader)
                     print("Created new uploader:", uploader.name)
+
+                    print("Downloading uploader avatar...")
+                    await start_download_avatar(uploader.channel_id, db)
             await db.commit()  # Commit uploader creation
 
             # If the video is not in the database, create a new video
