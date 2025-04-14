@@ -42,6 +42,8 @@ export const PlaylistUploaderModal = ({
   );
   const [loading, setLoading] = useState(false);
   const [loadError, setLoadError] = useState(false);
+  const [isRefreshingAvatar, setIsRefreshingAvatar] = useState(false);
+  const [avatarError, setAvatarError] = useState(false);
 
   useEffect(() => {
     if (isUploaderOpen) {
@@ -80,34 +82,31 @@ export const PlaylistUploaderModal = ({
     }
   };
 
-  const [avatarError, setAvatarError] = useState(false);
-
   const webSocketKey = `playlist_uploader`;
 
-  if (uploader) {
-    useWebSocket(
-      `${endpointWebSocketUploaders}`,
-      (data) => {
-        console.log("WebSocket data received:", data);
-        if (data.uploader_id !== uploader?.id) return;
+  const handleMessage = (data: any) => {
+    if (data.uploader_id !== uploader?.id) return;
+  
+    if (data.avatar_downloaded) {
+      mutate(`${endpointUploaders}/${data.uploader_id}`);
+      successToast("Avatar updated!");
+      setIsRefreshingAvatar(false);
+      setAvatarError(false);
+    }
+  
+    if (!data.avatar_downloaded) {
+      errorToast("Failed to update avatar.");
+      setIsRefreshingAvatar(false);
+    }
+  };
 
-        if (data.avatar_downloaded) {
-          mutate(`${endpointUploaders}/${data.uploader_id}`); // Re-fetch les données de l’uploader
-          successToast("Avatar updated!");
-          setIsRefreshingAvatar(false);
-          setAvatarError(false); // tenter de recharger l’image
-        }
+  console.log(uploader?.id, "Uploader ID");
 
-        if (!data.avatar_downloaded) {
-          errorToast("Failed to update avatar.");
-          setIsRefreshingAvatar(false);
-        }
-      },
-      webSocketKey
-    );
-  }
-
-  const [isRefreshingAvatar, setIsRefreshingAvatar] = useState(false);
+  useWebSocket(
+    `${endpointWebSocketUploaders}`,
+    handleMessage,
+    webSocketKey
+  );
 
   const refreshAvatar = () => {
     if (!uploader) return;
