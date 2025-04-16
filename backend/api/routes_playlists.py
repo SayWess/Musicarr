@@ -30,6 +30,7 @@ async def get_playlists(db: AsyncSession = Depends(get_db)):
             Playlist.check_every_day,
             Playlist.folder,
             func.count(PlaylistVideo.id).filter(PlaylistVideo.state != DownloadState.DOWNLOADED).label("missing_videos"),
+            Playlist.uploader_id,
         )
         .outerjoin(Playlist.videos)  # Join to count related videos
         .group_by(Playlist.id)
@@ -45,9 +46,10 @@ async def get_playlists(db: AsyncSession = Depends(get_db)):
             "check_every_day": check_every_day,
             "thumbnail": thumbnail,  # Assuming thumbnail is stored as folder/id.jpg
             "folder": folder,
-            "missing_videos": missing_videos
+            "missing_videos": missing_videos,
+            "uploader_id": uploader_id,
         }
-        for source_id, title, thumbnail, check_every_day, folder, missing_videos in playlists if source_id != 0
+        for source_id, title, thumbnail, check_every_day, folder, missing_videos, uploader_id in playlists if source_id != 0
     ]
 
 

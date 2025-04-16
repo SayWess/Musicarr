@@ -40,6 +40,8 @@ async def get_uploaders(
 
 # Command to download just uploader's avatar
 # yt-dlp https://www.youtube.com/@wotaku --write-thumbnail --playlist-items 0 --skip-download -o "%(channel)s.%(ext)s
+# Download all avatar and channel banners
+# yt-dlp "https://www.youtube.com/@{channel}" --write-all-thumbnails --playlist-items 0 --skip-downloads
 
 from utils.download_uploader_avatar import download_avatar, downloading
 
