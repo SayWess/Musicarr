@@ -117,7 +117,7 @@ async def fetch_and_store_playlist_info(playlist_url, db: AsyncSession):
 
     first_entry = playlist_info.get("entries", [])[0]  if playlist_info.get("entries") else {}
 
-    last_published = max([video.get("upload_date") for video in playlist_info.get("entries", [])]) or None
+    last_published = max([video.get("upload_date") for video in playlist_info.get("entries", []) if video]) or None
 
     if playlist:
        # Update existing playlist
