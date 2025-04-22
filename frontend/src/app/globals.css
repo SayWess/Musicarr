@@ -1,8 +1,33 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
+  --color-red-300: oklch(0.808 0.114 19.571);
+  --color-red-400: oklch(0.704 0.191 22.216);
+  --color-yellow-300: oklch(0.905 0.182 98.111);
+  --color-yellow-400: oklch(0.852 0.199 91.936);
+  --color-green-400: oklch(0.792 0.209 151.711);
+  --color-blue-300: oklch(0.809 0.105 251.813);
+  --color-blue-400: oklch(0.707 0.165 254.624);
+  --color-blue-500: oklch(0.623 0.214 259.815);
+  --color-blue-600: oklch(0.546 0.245 262.881);
+  --color-blue-700: oklch(0.488 0.243 264.376);
+  --color-gray-100: oklch(0.967 0.003 264.542);
+  --color-gray-200: oklch(0.928 0.006 264.531);
+  --color-gray-300: oklch(0.872 0.01 258.338);
+  --color-gray-400: oklch(0.707 0.022 261.325);
+  --color-gray-500: oklch(0.551 0.027 264.364);
+  --color-gray-600: oklch(0.446 0.03 256.802);
+  --color-gray-700: oklch(0.373 0.034 259.733);
+  --color-gray-800: oklch(0.278 0.033 256.848);
+  --color-gray-900: oklch(0.21 0.034 264.665);
+  --color-black: #000;
+  --color-white: #fff;
+
+  --background: oklch(0.967 0.003 264.542);
   --foreground: #171717;
+  
+  --sidebar-background: oklch(0.21 0.034 264.665);
+
 }
 
 @theme inline {
@@ -10,11 +35,25 @@
   --color-foreground: var(--foreground);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
+  
+  --animate-wiggle: wiggle 1s ease-in-out infinite;
+  @keyframes wiggle {
+    0%,
+    100% {
+      transform: rotate(-3deg);
+    }
+    50% {
+      transform: rotate(3deg);
+    }
+  }
+  
+  
+  
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --background: #0a0a0a;
+    --background: oklch(0.278 0.033 256.848);
     --foreground: #ededed;
   }
 }
@@ -23,4 +62,125 @@ body {
   background: var(--background);
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
+}
+
+
+@keyframes shimmer {
+  0% {
+    background-position: -1000px 0;
+  }
+  100% {
+    background-position: 1000px 0;
+  }
+}
+
+.shimmer {
+  background-size: 1000px 100%;
+  animation: shimmer 8s infinite linear;
+}
+
+.shimmer-refreshing {
+  background: linear-gradient(
+    to right,
+    rgba(85, 172, 238, 0.2) 8%,   /* Blue for refreshing */
+    rgba(85, 172, 238, 0.6) 18%,  
+    rgba(85, 172, 238, 0.2) 33%
+  );
+}
+
+.shimmer-downloading {
+  background: linear-gradient(
+    to right,
+    rgba(34, 197, 94, 0.2) 8%,   /* Green for downloading */
+    rgba(34, 197, 94, 0.512) 18%,  
+    rgba(34, 197, 94, 0.2) 33%
+  );
+}
+
+
+@keyframes sweep {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+.sweep-overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    120deg,
+    transparent,
+    rgba(34, 140, 197, 0.25),
+    transparent
+  );
+  animation: sweep 1.5s infinite linear;
+  pointer-events: none;
+}
+
+
+
+
+@keyframes pulse-glow-blue {
+  0%, 100% {
+    box-shadow: 0 0 0 rgba(0, 0, 0, 0);
+  }
+  50% {
+    box-shadow: 0 0 16px #3b82f6; /* Tailwind blue-500 */
+  }
+}
+
+@keyframes pulse-glow-green {
+  0%, 100% {
+    box-shadow: 0 0 0 rgba(0, 0, 0, 0);
+  }
+  50% {
+    box-shadow: 0 0 16px #22c55e; /* Tailwind green-500 */
+  }
+}
+
+.border-glow-blue {
+  animation: pulse-glow-blue 2s infinite ease-in-out;
+  border-radius: 0.75rem;
+}
+
+.border-glow-green {
+  animation: pulse-glow-green 2s infinite ease-in-out;
+  border-radius: 0.75rem;
+}
+
+@keyframes flicker-blue {
+  0%, 100% {
+    background-color: rgba(59, 130, 246, 0.1); /* blue-500/10 */
+  }
+  50% {
+    background-color: rgba(59, 130, 246, 0.3); /* blue-500/30 */
+  }
+}
+
+@keyframes flicker-green {
+  0%, 100% {
+    background-color: rgba(34, 197, 94, 0.1); /* green-500/10 */
+  }
+  50% {
+    background-color: rgba(34, 197, 94, 0.3); /* green-500/30 */
+  }
+}
+
+.flicker-blue {
+  position: absolute;
+  inset: 0;
+  animation: flicker-blue 1.5s infinite;
+  pointer-events: none;
+  border-radius: 0.75rem;
+}
+
+.flicker-green {
+  position: absolute;
+  inset: 0;
+  animation: flicker-green 1.5s infinite;
+  pointer-events: none;
+  border-radius: 0.75rem;
 }
