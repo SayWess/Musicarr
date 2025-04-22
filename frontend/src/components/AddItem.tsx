@@ -1,13 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Plus, Loader2, Download, X } from "lucide-react";
 import axios from "axios";
 import { endpointApi } from "@/constants/endpoints";
 import { extractYouTubeId } from "@/utils/extractYouTubeId";
 import { mutate } from "swr";
 import { toast } from "sonner";
-
 
 const AddItem = () => {
   const [url, setUrl] = useState("");
@@ -16,7 +15,7 @@ const AddItem = () => {
   // const { connect, disconnect, isConnected } = useWebSocket();
   const actuelRoute = window.location.pathname;
   const itemType = actuelRoute.includes("playlists") ? "Playlist" : "Video";
-  
+
   const handleDataFetch = async () => {
     if (!url.trim()) return;
 
@@ -42,9 +41,10 @@ const AddItem = () => {
 
       mutate(`${endpointApi}/${extracted.type}`);
 
-      toast.info(`Fetching data for ${extracted.type.substring(0, -1)}: ${extracted.id}`)
+      toast.info(
+        `Fetching data for ${extracted.type.substring(0, -1)}: ${extracted.id}`
+      );
       toast.success(`${itemType} added!`);
-
     } catch (error) {
       console.error("Error fetching data:", error);
       toast.error("Failed to fetch data.");
@@ -54,6 +54,26 @@ const AddItem = () => {
       setUrl("");
     }
   };
+
+  const menuRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
+        setOpen(false);
+      }
+    };
+
+    if (open) {
+      document.addEventListener("mousedown", handleClickOutside);
+    } else {
+      document.removeEventListener("mousedown", handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [open]);
 
   return (
     <>
@@ -70,7 +90,10 @@ const AddItem = () => {
       {/* Modal */}
       {open && (
         <div className="fixed z-100 inset-0 flex items-center justify-center bg-black/50 min-h-[105vh] h-[100%]">
-          <div className="bg-gray-900 text-white p-6 rounded-lg shadow-lg w-80 relative">
+          <div
+            className="bg-gray-900 text-white p-6 rounded-lg shadow-lg w-80 relative"
+            ref={menuRef}
+          >
             <button
               onClick={() => setOpen(false)}
               className="absolute top-3 right-3"
