@@ -16,7 +16,7 @@ Musicarr is an automatic playlist management and download application, inspired 
 ## Technologies 🚀
 
 **Frontend**: Next.js, TypeScript, Tailwind CSS  
-**Backend**: FastAPI, Python 3.11, `yt-dlp` via subprocess  
+**Backend**: FastAPI, Python 3.11, `yt-dlp` via subprocess , Alembic, SQLAlchemy   
 **Database**: PostgreSQL  
 **State Management**: SWR
 
@@ -52,16 +52,16 @@ uvicorn main:app --reload
 ## TODO 📌
 
 ### Backend
-- [ ] WebSocket support for live download tracking
+- [x] WebSocket support for live download tracking
 - [ ] Validate filenames and folder names strictly in the API
 - [ ] Add optional authentication
-- [ ] Improve download logging
+- [x] Improve download logging
 
 ### Frontend
-- [ ] Better user feedback (errors, spinners, notifications)
-- [ ] Display progress bar when a video is downloading
+- [x] Better user feedback (errors, spinners, notifications)
+- [x] Display progress when a video is downloading
 - [ ] Smarter playlist creation (search, autocomplete)
-- [ ] Responsive mobile layout improvements
+- [x] Responsive mobile layout improvements
 
 ### Quality & Tests
 - [ ] Add backend unit tests
