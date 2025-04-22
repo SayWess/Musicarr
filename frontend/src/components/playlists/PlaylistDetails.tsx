@@ -1,16 +1,14 @@
 "use client";
 
-import "./playlistClient.css";
+import "./playlistDetails.css";
 import Image from "next/image";
 import useSWR, { mutate } from "swr";
+import { Calendar, Video, Film, Captions, FolderDown } from "lucide-react";
 import {
-  Calendar,
-  Video,
-  Film,
-  Captions,
-  FolderDown,
-} from "lucide-react";
-import { VideoDetails, DownloadQuality } from "@/types/models";
+  VideoDetails,
+  DownloadQuality,
+  PlaylistDetails as PlaylistDetailsInterface,
+} from "@/types/models";
 import axios from "axios";
 import {
   endpointPlaylists,
@@ -29,26 +27,30 @@ import {
   ThumbnailModal,
 } from "@/components/modals/ThumbnailModal";
 import { SortVideos } from "@/components/SortItems";
-import { VALID_SORT_FIELDS, VALID_ORDERS } from "@/constants/sortFields";
+import {
+  VALID_SORT_FIELDS_VIDEOS,
+  SortOrder,
+  SortField,
+} from "@/constants/sortFields";
 import successToast from "../toasts/successToast";
 import errorToast from "../toasts/errorToast";
 import infoToast from "../toasts/infoToast";
 import PlaylistUploader from "./PlaylistUploader";
+import { COOKIE_KEY_VIDEOS } from "@/constants/cookies_keys";
 
-type SortField = (typeof VALID_SORT_FIELDS)[number];
-type SortOrder = (typeof VALID_ORDERS)[number];
+interface PlaylistDetailsProps {
+  id: string;
+  initialPlaylist: PlaylistDetailsInterface;
+  initialSortBy: SortField;
+  initialSortOrder: SortOrder;
+}
 
-export default function PlaylistClient({
+export default function PlaylistDetails({
   id,
   initialPlaylist,
   initialSortBy,
   initialSortOrder,
-}: {
-  id: string;
-  initialPlaylist: any;
-  initialSortBy: SortField;
-  initialSortOrder: SortOrder;
-}) {
+}: PlaylistDetailsProps) {
   // Local state to manage sorting
   const [currentSortBy, setSortBy] = useState<SortField>(initialSortBy);
   const [currentSortOrder, setSortOrder] =
@@ -239,7 +241,6 @@ export default function PlaylistClient({
       playlist.default_quality
   );
 
-
   return (
     <div className="p-3 md:p-12 pb-24">
       {/* <button
@@ -281,7 +282,10 @@ export default function PlaylistClient({
 
           <div className="flex flex-col items-start max-w-[100%] lg:contents gap-2">
             <div className="lg:mt-2 flex flex-col gap-2">
-              <PlaylistUploader playlist={playlist} isRefreshing={isRefreshing} />
+              <PlaylistUploader
+                playlist={playlist}
+                isRefreshing={isRefreshing}
+              />
 
               <div className="flex items-center gap-2">
                 <Calendar size={16} className="min-w-fit" /> Last video
@@ -341,11 +345,13 @@ export default function PlaylistClient({
       </div>
 
       <SortVideos
-        id={id}
         currentSortBy={currentSortBy}
         setSortBy={setSortBy}
         currentSortOrder={currentSortOrder}
         setSortOrder={setSortOrder}
+        validSortFields={[...VALID_SORT_FIELDS_VIDEOS]}
+        SWR_endpoint={`${endpointPlaylists}/${id}/details`}
+        cookie_key={COOKIE_KEY_VIDEOS}
       />
 
       {/* Video List */}

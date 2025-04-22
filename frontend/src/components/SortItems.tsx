@@ -1,28 +1,29 @@
 import { useState } from "react";
 import { ArrowDownUp } from "lucide-react";
 import { mutate } from "swr";
-import { endpointPlaylists } from "@/constants/endpoints";
-import { ParamValue } from "next/dist/server/request/params";
 import axios from "axios";
 import errorToast from "./toasts/errorToast";
+import { SortField, SortOrder } from "@/constants/sortFields";
 
-type SortField = "title" | "upload_date" | "state";
-type SortOrder = "asc" | "desc";
 
 interface SortVideosProps {
-  id: ParamValue;
   currentSortBy: SortField;
   setSortBy: (sortBy: SortField) => void;
   currentSortOrder: SortOrder;
   setSortOrder: (sortOrder: SortOrder) => void;
+  validSortFields: SortField[];
+  SWR_endpoint: string;
+  cookie_key: string
 }
 
 export const SortVideos = ({
-  id,
   currentSortBy,
   setSortBy,
   currentSortOrder,
   setSortOrder,
+  validSortFields,
+  SWR_endpoint,
+  cookie_key,
 }: SortVideosProps) => {
   const [showOptions, setShowOptions] = useState(false); // for mobile toggle
 
@@ -37,16 +38,16 @@ export const SortVideos = ({
     setSortBy(newSortBy);
     setSortOrder(newOrder);
 
-    // Save sortBy and order in cookies
-    document.cookie = `sort_by=${newSortBy}; path=/; max-age=31536000`;
-    document.cookie = `order=${newOrder}; path=/; max-age=31536000`;
+    console.log("SortVideos", newSortBy, newOrder);
+    document.cookie = `${cookie_key}_sort_by=${newSortBy}; path=/; max-age=31536000; SameSite=Lax;`
+    document.cookie = `${cookie_key}_order=${newOrder}; path=/; max-age=31536000; SameSite=Lax;`
 
     async function fetchData() {
       const fetcher = (url: string) =>
         axios
           .get(url + `?sort_by=${newSortBy}&order=${newOrder}`)
           .then((res) => res.data);
-      const response = await fetcher(`${endpointPlaylists}/${id}/details`);
+      const response = await fetcher(SWR_endpoint);
       
       if (!response) {
         console.error("No response data");
@@ -54,7 +55,7 @@ export const SortVideos = ({
         return;
       }
       // Manually trigger a re-fetch for the new parameters
-      mutate(`${endpointPlaylists}/${id}/details`, response, false);
+      mutate(SWR_endpoint, response, false);
     }
 
     fetchData().catch((error) => {
@@ -74,13 +75,14 @@ export const SortVideos = ({
       </button>
 
       {showOptions && (
-        <div className="bg-gray-800 text-white rounded-lg p-4 absolute bottom-12 left-1/2 transform -translate-x-1/2 w-48 z-50">
+        <div className="bg-gray-800 text-white gap-2 flex flex-col ring-2 ring-gray-600 rounded-lg p-4 absolute bottom-12 left-1/2 transform -translate-x-1/2 w-100 max-w-[80vw] max-h-[80vh] z-50">
           <div className="text-center font-bold mb-2">Sort by:</div>
-          {(["title", "upload_date", "state"] as SortField[]).map((field) => (
+          <div className="flex flex-wrap justify-center gap-2">
+          {validSortFields.map((field) => (
             <button
               key={field}
               onClick={() => updateSort(field)}
-              className={`block w-full text-left px-4 py-2 rounded-lg text-sm transition ${
+              className={`block text-left px-4 py-2 rounded-lg text-sm transition ${
                 currentSortBy === field
                   ? "bg-blue-600 text-white"
                   : "bg-gray-700 text-gray-200 hover:bg-gray-600"
@@ -94,6 +96,7 @@ export const SortVideos = ({
               )}
             </button>
           ))}
+          </div>
         </div>
       )}
     </div>

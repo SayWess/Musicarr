@@ -1,11 +1,11 @@
 import { cookies } from "next/headers";
 import { endpointPlaylists } from "@/constants/endpoints";
-import PlaylistClient from "@/components/playlists/PlaylistClient";
+import PlaylistDetails from "@/components/playlists/PlaylistDetails";
 import axios from "axios";
-import { VALID_SORT_FIELDS, VALID_ORDERS } from "@/constants/sortFields";
+import { VALID_SORT_FIELDS_VIDEOS, SortOrder } from "@/constants/sortFields";
 
-type SortField = (typeof VALID_SORT_FIELDS)[number];
-type SortOrder = (typeof VALID_ORDERS)[number];
+type SortField = (typeof VALID_SORT_FIELDS_VIDEOS)[number];
+
 
 interface PlaylistPageParams {
   id: string;
@@ -23,7 +23,7 @@ export default async function PlaylistPage({ params }: { params: PlaylistPagePar
   );
 
   return (
-    <PlaylistClient
+    <PlaylistDetails
       id={id}
       initialPlaylist={res.data}
       initialSortBy={sortBy}
