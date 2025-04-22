@@ -36,6 +36,7 @@ interface Playlist {
   thumbnail: string;
   check_every_day: boolean;
   missing_videos: number;
+  uploader_id?: string;
   videos: Video[];
 }
 
