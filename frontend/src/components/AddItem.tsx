@@ -6,7 +6,9 @@ import axios from "axios";
 import { endpointApi } from "@/constants/endpoints";
 import { extractYouTubeId } from "@/utils/extractYouTubeId";
 import { mutate } from "swr";
-import { toast } from "sonner";
+import errorToast from "./toasts/errorToast";
+import infoToast from "./toasts/infoToast";
+import successToast from "./toasts/successToast";
 
 const AddItem = () => {
   const [url, setUrl] = useState("");
@@ -22,7 +24,7 @@ const AddItem = () => {
     const extracted = extractYouTubeId(url);
     if (!extracted) {
       setOpen(false);
-      toast.error("Invalid YouTube URL!");
+      errorToast("Invalid YouTube URL!");
       return;
     }
 
@@ -34,20 +36,20 @@ const AddItem = () => {
       );
 
       if (response.data.error) {
-        toast.error(`${itemType} already exists!`);
+        errorToast(`${itemType} already exists!`);
         setLoading(false);
         return;
       }
 
       mutate(`${endpointApi}/${extracted.type}`);
 
-      toast.info(
+      infoToast(
         `Fetching data for ${extracted.type.substring(0, -1)}: ${extracted.id}`
       );
-      toast.success(`${itemType} added!`);
+      successToast(`${itemType} added!`);
     } catch (error) {
       console.error("Error fetching data:", error);
-      toast.error("Failed to fetch data.");
+      errorToast("Failed to fetch data.");
     } finally {
       setLoading(false);
       setOpen(false);
