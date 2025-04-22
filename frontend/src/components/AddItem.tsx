@@ -60,7 +60,7 @@ const AddItem = () => {
       {/* Floating "Add" Button */}
       <button
         onClick={() => setOpen(true)}
-        className="fixed z-10 bottom-12 md:bottom-6 left-1/2 transform -translate-x-1/2 
+        className="fixed z-10 bottom-1 mb-10 right-0 transform -translate-x-1/2 
              bg-blue-600 hover:bg-blue-700 text-white
              p-4 rounded-full shadow-lg transition"
       >
@@ -69,7 +69,7 @@ const AddItem = () => {
 
       {/* Modal */}
       {open && (
-        <div className="fixed z-10 inset-0 flex items-center justify-center bg-black/50 min-h-[105vh] h-[100%]">
+        <div className="fixed z-100 inset-0 flex items-center justify-center bg-black/50 min-h-[105vh] h-[100%]">
           <div className="bg-gray-900 text-white p-6 rounded-lg shadow-lg w-80 relative">
             <button
               onClick={() => setOpen(false)}
