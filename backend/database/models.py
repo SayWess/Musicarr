@@ -1,4 +1,4 @@
-from sqlalchemy import Column, String, Boolean, ForeignKey, Enum
+from sqlalchemy import Column, String, Boolean, ForeignKey, Enum, DateTime, func
 from sqlalchemy.orm import relationship, declared_attr
 from sqlalchemy.dialects.postgresql import UUID
 import uuid
@@ -52,6 +52,7 @@ class Item(Base):
     thumbnail = Column(String, nullable=True)
     upload_date = Column(String, nullable=True)
     folder = Column(String, default="/download")  # Default storage folder
+    created_at = Column(DateTime(timezone=True), server_default=func.now())  # Date de création automatique
 
     @declared_attr
     def __tablename__(cls):

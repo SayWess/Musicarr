@@ -19,13 +19,14 @@ router = APIRouter()
 VALID_SORT_FIELDS = {
     "title": Playlist.title,
     "last_published": Playlist.last_published,  # supposer que ce champ existe
+    "created_at": Playlist.created_at,
     "uploader": Playlist.uploader_id,
 }
 
 @router.get("/")
 async def get_playlists(
     db: AsyncSession = Depends(get_db),
-    sort_by: str = Query("title", enum=["title", "last_update", "state", "videos_count", "downloaded_count", "missing_count", "uploader"], description="Field to sort by"),
+    sort_by: str = Query("title", enum=["title", "last_update", "created_at", "state", "videos_count", "downloaded_count", "missing_count", "uploader"], description="Field to sort by"),
     order: str = Query("asc", enum=["asc", "desc"], description="Sort order"),
 ):
     # Aliases pour count custom
