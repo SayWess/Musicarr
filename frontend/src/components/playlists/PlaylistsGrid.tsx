@@ -17,9 +17,10 @@ interface PlaylistsProps {
   initialPlaylists: Playlist[];
   initialSortBy: SortField;
   initialSortOrder: SortOrder;
+  initialIsGridSmall: boolean;
 }
 
-export default function Playlists({ initialPlaylists, initialSortBy, initialSortOrder }: PlaylistsProps) {
+export default function Playlists({ initialPlaylists, initialSortBy, initialSortOrder, initialIsGridSmall }: PlaylistsProps) {
   const [ sortBy, setSortBy ] = useState<SortField>(initialSortBy);
   const [ sortOrder, setSortOrder ] = useState<SortOrder>(initialSortOrder);
   const SWR_endpoint = endpointPlaylists;
@@ -31,7 +32,11 @@ export default function Playlists({ initialPlaylists, initialSortBy, initialSort
     sortOrder
   );
 
-  const [isGridSmall, setIsGridSmall] = useState(false);
+  const [isGridSmall, setIsGridSmall] = useState(initialIsGridSmall);
+  const handleGridSizeChange = (size: boolean) => {
+    setIsGridSmall(size);
+    document.cookie = `${COOKIE_KEY_PLAYLISTS}_grid_size=${size}; path=/; max-age=31536000; SameSite=Lax;`;
+  };
 
   if (isLoading) {
     return (
@@ -60,7 +65,7 @@ export default function Playlists({ initialPlaylists, initialSortBy, initialSort
 
         <button
           className="items-center cursor-pointer pr-2 relative w-6 h-6"
-          onClick={() => setIsGridSmall(!isGridSmall)}
+          onClick={() => handleGridSizeChange(!isGridSmall)}
         >
           <div
             className="absolute inset-0 transition-opacity duration-300 ease-in-out transform"
