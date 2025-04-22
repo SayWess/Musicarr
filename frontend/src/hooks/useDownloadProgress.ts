@@ -1,9 +1,10 @@
 import { useState } from "react";
 import { useWebSocket } from "@/hooks/useWebSocket";
 import { endpointWebSocketPlaylists } from "@/constants/endpoints";
-import { toast } from "sonner";
 import { mutate } from "swr";
 import { endpointPlaylists } from "@/constants/endpoints";
+import successToast from "@/components/toasts/successToast";
+import errorToast from "@/components/toasts/errorToast";
 
 const useDownloadProgress = (playlistId: string) => {
   const [progress, setProgress] = useState<Record<string, number>>({});
@@ -48,7 +49,7 @@ const useDownloadProgress = (playlistId: string) => {
             return updated;
           });
           updateStatus(video_id, "DOWNLOADED");
-          toast.success(`Download complete: ${data.video_title || video_id}`);
+          successToast(`Download complete: ${data.video_title || video_id}`);
           mutate
           break;
 
@@ -59,7 +60,7 @@ const useDownloadProgress = (playlistId: string) => {
             return updated;
           });
           updateStatus(video_id, "ERROR");
-          toast.error(`Download failed: ${data.video_title || video_id}`);
+          errorToast(`Download failed: ${data.video_title || video_id}`);
           break;
       }
     },

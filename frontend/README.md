@@ -2,4 +2,4 @@
 
 ## TODO
 
-[ ] Use the `Modal.tsx` component with `AddItem.tsx`
+- [ ] Add videos page

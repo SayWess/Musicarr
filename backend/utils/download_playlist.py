@@ -21,7 +21,6 @@ async def start_download_playlist(playlist_id: str, db: AsyncSession, redownload
     Returns:
         dict: Dictionnaire avec les informations de la playlist et des vidéos.
     """
-    nb_download_failed = 0
 
     # Re-fetch the playlist with videos and PlaylistVideo relation
     if redownloadAll:
@@ -34,15 +33,18 @@ async def start_download_playlist(playlist_id: str, db: AsyncSession, redownload
         )
         playlist = result.scalar_one_or_none()
     else:
+        print(f"Fetching playlist with ID {playlist_id}...")
         result = await db.execute(
             select(Playlist)
             .options(
                 selectinload(Playlist.videos).selectinload(PlaylistVideo.video) 
             )
             .where(Playlist.id == playlist_id)
-            .where(Playlist.videos.any(PlaylistVideo.state in [DownloadState.IDLE, DownloadState.ERROR]))  # Only select if not all videos are downloaded
+            .where(Playlist.videos.any(PlaylistVideo.state.in_([DownloadState.IDLE, DownloadState.ERROR])))  # Only select if not all videos are downloaded
         )
+        
         playlist = result.scalar_one_or_none()
+
     
     print(f"Playlist: {playlist}")
     if not playlist:
@@ -50,14 +52,19 @@ async def start_download_playlist(playlist_id: str, db: AsyncSession, redownload
         return "No video to download", 0
 
 
-
+    nb_download_failed = 0
+    nb_videos_to_download = 0
     print(f"Starting download for playlist: {playlist.title}")
 
     for playlist_video in playlist.videos:
+        if not redownloadAll and playlist_video.state not in [DownloadState.IDLE, DownloadState.ERROR]:
+            continue
+        
         video = playlist_video.video
         if not video:
             continue
 
+        nb_videos_to_download += 1
         print(f"Starting download for video: {video.title}")
 
         # Mark as DOWNLOADING
@@ -87,22 +94,14 @@ async def start_download_playlist(playlist_id: str, db: AsyncSession, redownload
         await db.commit()
         await db.refresh(playlist_video)
 
-        if success:
-            await ws_manager.send_message("playlists", {
-                "playlist_id": playlist.source_id,
-                "video_id": video.source_id,
-                "video_title": video.title,
-                "status": "finished"
-            })
-        else:
-            await ws_manager.send_message("playlists", {
-                "playlist_id": playlist.source_id,
-                "video_id": video.source_id,
-                "video_title": video.title,
-                "status": "error",
-            })
+        await ws_manager.send_message("playlists", {
+            "playlist_id": playlist.source_id,
+            "video_id": video.source_id,
+            "video_title": video.title,
+            "status": "finished" if success else "error"
+        })
     
-    return nb_download_failed, len(playlist.videos)
+    return nb_download_failed, nb_videos_to_download
 
 
     

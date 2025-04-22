@@ -1,10 +1,9 @@
 import React from "react";
 import useSWR from "swr";
 import { endpointPlaylists } from "@/constants/endpoints";
-import axios from "axios";
 import { Download } from "lucide-react";
+import { fetcher } from "@/utils/fetcher";
 
-const fetcher = (url: string) => axios.get(url).then((res) => res.data);
 
 const NumberOfVideosDownloaded = ({ playlist_id }: { playlist_id: string }) => {
   const { data: data, isLoading } = useSWR(
@@ -16,20 +15,13 @@ const NumberOfVideosDownloaded = ({ playlist_id }: { playlist_id: string }) => {
     <div className="flex items-center gap-2">
       <Download size={16} />
       Videos:{" "}
-
-      { !isLoading && data ? (
-        <span className="font-medium">
-            {data.downloaded_videos} / {data.total_videos}
-        </span>
-        ) : (
-            <span className="text-gray-400">
-                Loading...
-            </span>
-            )
-        } 
+      <span>
+        {!isLoading && data
+          ? `${data.downloaded_videos} / ${data.total_videos}`
+          : "Loading..."}
+      </span>
     </div>
   );
 };
-
 
 export default NumberOfVideosDownloaded;

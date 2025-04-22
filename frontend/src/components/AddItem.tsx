@@ -1,13 +1,14 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Plus, Loader2, Download, X } from "lucide-react";
 import axios from "axios";
 import { endpointApi } from "@/constants/endpoints";
 import { extractYouTubeId } from "@/utils/extractYouTubeId";
 import { mutate } from "swr";
-import { toast } from "sonner";
-
+import errorToast from "./toasts/errorToast";
+import infoToast from "./toasts/infoToast";
+import successToast from "./toasts/successToast";
 
 const AddItem = () => {
   const [url, setUrl] = useState("");
@@ -16,14 +17,14 @@ const AddItem = () => {
   // const { connect, disconnect, isConnected } = useWebSocket();
   const actuelRoute = window.location.pathname;
   const itemType = actuelRoute.includes("playlists") ? "Playlist" : "Video";
-  
+
   const handleDataFetch = async () => {
     if (!url.trim()) return;
 
     const extracted = extractYouTubeId(url);
     if (!extracted) {
       setOpen(false);
-      toast.error("Invalid YouTube URL!");
+      errorToast("Invalid YouTube URL!");
       return;
     }
 
@@ -35,19 +36,20 @@ const AddItem = () => {
       );
 
       if (response.data.error) {
-        toast.error(`${itemType} already exists!`);
+        errorToast(`${itemType} already exists!`);
         setLoading(false);
         return;
       }
 
       mutate(`${endpointApi}/${extracted.type}`);
 
-      toast.info(`Fetching data for ${extracted.type.substring(0, -1)}: ${extracted.id}`)
-      toast.success(`${itemType} added!`);
-
+      infoToast(
+        `Fetching data for ${extracted.type.substring(0, -1)}: ${extracted.id}`
+      );
+      successToast(`${itemType} added!`);
     } catch (error) {
       console.error("Error fetching data:", error);
-      toast.error("Failed to fetch data.");
+      errorToast("Failed to fetch data.");
     } finally {
       setLoading(false);
       setOpen(false);
@@ -55,12 +57,32 @@ const AddItem = () => {
     }
   };
 
+  const menuRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
+        setOpen(false);
+      }
+    };
+
+    if (open) {
+      document.addEventListener("mousedown", handleClickOutside);
+    } else {
+      document.removeEventListener("mousedown", handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [open]);
+
   return (
     <>
       {/* Floating "Add" Button */}
       <button
         onClick={() => setOpen(true)}
-        className="fixed z-10 bottom-12 md:bottom-6 left-1/2 transform -translate-x-1/2 
+        className="fixed z-10 bottom-1 mb-10 md:mb-2 right-0 transform -translate-x-1/2 
              bg-blue-600 hover:bg-blue-700 text-white
              p-4 rounded-full shadow-lg transition"
       >
@@ -69,8 +91,11 @@ const AddItem = () => {
 
       {/* Modal */}
       {open && (
-        <div className="fixed z-10 inset-0 flex items-center justify-center bg-black/50 min-h-[105vh] h-[100%]">
-          <div className="bg-gray-900 text-white p-6 rounded-lg shadow-lg w-80 relative">
+        <div className="fixed z-100 inset-0 flex items-center justify-center bg-black/50 min-h-[105vh] h-[100%]">
+          <div
+            className="bg-gray-900 text-white p-6 rounded-lg shadow-lg w-80 relative"
+            ref={menuRef}
+          >
             <button
               onClick={() => setOpen(false)}
               className="absolute top-3 right-3"

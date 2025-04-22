@@ -1,0 +1,18 @@
+.container-playlist-info {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    font-weight: bold;
+    min-width: 10px;
+    max-width: 100%;
+}
+
+@media (max-width: 400px) {
+    .container-playlist-info {
+        font-size: clamp(0.8rem, 4vw, 0.9rem);
+    }
+
+    .container-playlist-info > h1 {
+        font-size: large;
+    }
+}

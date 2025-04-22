@@ -10,7 +10,7 @@ const RefreshButton = ({ onClick, isRefreshing, isDownloading }: RefreshButtonPr
   return (
     <button
       onClick={onClick}
-      className="text-blue-400 hover:text-blue-300 flex items-center"
+      className="text-blue-400 hover:text-blue-300 flex items-center cursor-pointer"
       disabled={isRefreshing || isDownloading}
     >
       <RefreshCw

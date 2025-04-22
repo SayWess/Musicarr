@@ -15,6 +15,7 @@ import {
 } from "@/types/models";
 import successToast from "../toasts/successToast";
 import errorToast from "../toasts/errorToast";
+import { Info } from "lucide-react";
 
 interface EditModalProps {
   isEditOpen: boolean;
@@ -99,30 +100,25 @@ const EditModal = ({ isEditOpen, closeEdit, playlist }: EditModalProps) => {
     formData.title = formData.title.trim();
     formData.folder = formData.folder.trim();
     try {
-      const response = await fetch(
-        `${endpointPlaylists}/${playlist.id}`,
-        {
-          method: "PUT",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify(formData),
-        }
-      );
+      const response = await fetch(`${endpointPlaylists}/${playlist.id}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(formData),
+      });
       if (!response.ok) {
         throw new Error("Failed to save options");
       }
       mutate(`${endpointPlaylists}/${playlist.id}/details`);
-      // successToast({
-      //   title: "Options saved",
-      //   description: "Your changes have been saved.",
-      // });
       closeEdit();
     } catch (error) {
       console.error("Error saving options:", error);
-      errorToast({ title: "Error", description: "Failed to save options." });
+      errorToast("Error", "Failed to save options.");
     }
   };
+
+  const [showTooltip, setShowTooltip] = useState(false);
 
   return (
     <Modal isOpen={isEditOpen} onClose={closeEdit}>
@@ -134,7 +130,9 @@ const EditModal = ({ isEditOpen, closeEdit, playlist }: EditModalProps) => {
           <div className="space-y-4 p-4 lg:flex justify-between gap-6">
             <div className="flex-2 space-y-4 max-w-[500px]">
               <div>
-                <label className="block text-md font-bold text-[goldenrod]">Title</label>
+                <label className="block text-md font-bold text-[goldenrod]">
+                  Title
+                </label>
                 <input
                   type="text"
                   name="title"
@@ -149,7 +147,9 @@ const EditModal = ({ isEditOpen, closeEdit, playlist }: EditModalProps) => {
                 )}
               </div>
               <div>
-                <label className="block text-md font-bold text-[goldenrod]">Folder</label>
+                <label className="block text-md font-bold text-[goldenrod]">
+                  Folder
+                </label>
                 <input
                   type="text"
                   name="folder"
@@ -172,7 +172,9 @@ const EditModal = ({ isEditOpen, closeEdit, playlist }: EditModalProps) => {
                     onChange={handleChange}
                     className="h-5 w-5"
                   />
-                  <span className="text-md font-medium text-[goldenrod]">Check Every Day</span>
+                  <span className="text-md font-medium text-[goldenrod]">
+                    Check Every Day
+                  </span>
                 </div>
                 <div className="flex items-center space-x-2">
                   <input
@@ -182,7 +184,9 @@ const EditModal = ({ isEditOpen, closeEdit, playlist }: EditModalProps) => {
                     onChange={handleChange}
                     className="h-5 w-5"
                   />
-                  <span className="text-md font-medium text-[goldenrod]">Subtitles</span>
+                  <span className="text-md font-medium text-[goldenrod]">
+                    Subtitles
+                  </span>
                 </div>
               </div>
             </div>
@@ -216,9 +220,27 @@ const EditModal = ({ isEditOpen, closeEdit, playlist }: EditModalProps) => {
                 </div>
               </div>
               <div>
-                <span className="block text-md font-bold text-[goldenrod]">
-                  Default Quality
-                </span>
+                <div className="relative">
+                  <button
+                    className="block text-md font-medium text-[goldenrod] flex items-center cursor-help"
+                    onMouseEnter={() => setShowTooltip(true)}
+                    onMouseLeave={() => setShowTooltip(false)}
+                    onClick={() => setShowTooltip(!showTooltip)}
+                  >
+                    Default Quality <Info size={16} className="ml-1" />
+                  </button>
+
+                  {/* Tooltip */}
+                  {showTooltip && (
+                    <div
+                      className="absolute z-50 mt-2 ml-2 w-64 bg-gray-800 text-sm text-gray-200 rounded-md px-3 py-2 shadow-lg"
+                    >
+                      The video quality selected may not be available,
+                      it will however use the nearest quality from the one you
+                      selected.
+                    </div>
+                  )}
+                </div>
                 <div className="flex flex-wrap gap-4 mt-1">
                   {Object.entries(DownloadQuality).map(([key, value]) => (
                     <label

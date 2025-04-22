@@ -48,5 +48,5 @@ export function useWebSocket(url: string, onMessage: (data: any) => void, key: s
         delete wsInstances[url];
       }
     };
-  }, [url, key]); // Depend on key to prevent duplicate hooks
+  }, [url, key, onMessage]); // Depend on key to prevent duplicate hooks
 }

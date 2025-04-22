@@ -1,12 +1,14 @@
-from fastapi import APIRouter, Depends, HTTPException
-from sqlalchemy.orm import Session, selectinload
+from fastapi import APIRouter, Depends, HTTPException, Query
+from sqlalchemy.orm import selectinload
 from database.database import get_db
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, func
-from database.models import Playlist, PlaylistVideo, DownloadState, Video
+from sqlalchemy import select, func, desc, asc
+from database.models import Playlist, PlaylistVideo, DownloadState, Video, Uploader
 import asyncio
 from utils.fetchPlaylistInfo import fetch_full_playlist
 from utils.download_playlist import download_playlist
+from pydantic import BaseModel
+from typing import Optional
 
 from websocket_manager import ws_manager
 
@@ -14,38 +16,75 @@ from websocket_manager import ws_manager
 router = APIRouter()
 
 
+VALID_SORT_FIELDS = {
+    "title": Playlist.title,
+    "last_published": Playlist.last_published,  # supposer que ce champ existe
+    "created_at": Playlist.created_at,
+    "uploader": Playlist.uploader_id,
+}
+
 @router.get("/")
-async def get_playlists(db: AsyncSession = Depends(get_db)):
-    """
-    Récupérer la liste des playlists avec le nombre de vidéos non téléchargées (calculé via COUNT SQL)
-    """
-    # Query to fetch playlists with count of missing videos
-    result = await db.execute(
+async def get_playlists(
+    db: AsyncSession = Depends(get_db),
+    sort_by: str = Query("title", enum=["title", "last_update", "created_at", "state", "videos_count", "downloaded_count", "missing_count", "uploader"], description="Field to sort by"),
+    order: str = Query("asc", enum=["asc", "desc"], description="Sort order"),
+):
+    # Aliases pour count custom
+    downloaded_count = func.count(PlaylistVideo.id).filter(PlaylistVideo.state == DownloadState.DOWNLOADED).label("downloaded_count")
+    missing_count = func.count(PlaylistVideo.id).filter(PlaylistVideo.state != DownloadState.DOWNLOADED).label("missing_count")
+    videos_count = func.count(PlaylistVideo.id).label("videos_count")
+
+    # Base query
+    query = (
         select(
+            Playlist.id,
             Playlist.source_id,
             Playlist.title,
             Playlist.thumbnail,
             Playlist.check_every_day,
             Playlist.folder,
-            func.count(PlaylistVideo.id).filter(PlaylistVideo.state != DownloadState.DOWNLOADED).label("missing_videos"),
+            Playlist.last_published,
+            Playlist.uploader_id,
+            videos_count,
+            downloaded_count,
+            missing_count,
         )
-        .outerjoin(Playlist.videos)  # Join to count related videos
+        .outerjoin(Playlist.videos)
         .group_by(Playlist.id)
     )
 
+    # Ajout du tri
+    if sort_by in ["downloaded_count", "missing_count", "videos_count"]:
+        sort_column = {
+            "downloaded_count": downloaded_count,
+            "missing_count": missing_count,
+            "videos_count": videos_count,
+        }[sort_by]
+    elif sort_by in VALID_SORT_FIELDS:
+        sort_column = VALID_SORT_FIELDS[sort_by]
+    else:
+        sort_column = Playlist.title  # fallback
+
+    query = query.order_by(asc(sort_column) if order == "asc" else desc(sort_column))
+
+    # Execute and format
+    result = await db.execute(query)
     playlists = result.all()
 
-    # Convert to JSON-friendly response
     return [
         {
-            "id": source_id,
-            "title": title,
-            "check_every_day": check_every_day,
-            "thumbnail": thumbnail,  # Assuming thumbnail is stored as folder/id.jpg
-            "folder": folder,
-            "missing_videos": missing_videos
+            "id": row.source_id,
+            "title": row.title,
+            "thumbnail": row.thumbnail,
+            "check_every_day": row.check_every_day,
+            "folder": row.folder,
+            "last_published": row.last_published,
+            "uploader_id": row.uploader_id,
+            # "videos_count": row.videos_count,
+            # "downloaded_count": row.downloaded_count,
+            "missing_count": row.missing_count,
         }
-        for source_id, title, thumbnail, check_every_day, folder, missing_videos in playlists if source_id != 0
+        for row in playlists if row.source_id != 0
     ]
 
 
@@ -129,9 +168,40 @@ async def add_playlist(playlist_id: str, db: AsyncSession = Depends(get_db)):
 
     return {"message": "Playlist added", "playlist": new_playlist}
 
+class UpdateUploaderRequest(BaseModel):
+    uploader_id: Optional[str] = None
+
+@router.put("/{playlist_id}/uploader")
+async def update_playlist_uploader(
+    playlist_id: str,
+    payload: UpdateUploaderRequest,
+    db: AsyncSession = Depends(get_db)
+):
+    if not payload.uploader_id:
+        raise HTTPException(status_code=400, detail="Uploader ID is required")
+    
+    result = await db.execute(select(Playlist).where(Playlist.source_id == playlist_id))
+    playlist = result.scalars().first()
+    if not playlist:
+        raise HTTPException(status_code=404, detail="Playlist not found")
+
+    print(payload)
+    print(payload.uploader_id)
+    uploader = await db.get(Uploader, payload.uploader_id)
+    if not uploader:
+        raise HTTPException(status_code=404, detail="Uploader not found")
+
+    playlist.uploader_id = payload.uploader_id
+    await db.commit()
+    return {"detail": "Uploader updated successfully"}
 
 @router.get("/{playlist_id}/details")
-async def get_playlist_details(playlist_id: str, db: AsyncSession = Depends(get_db)):
+async def get_playlist_details(
+    playlist_id: str,
+    db: AsyncSession = Depends(get_db),
+    sort_by: str = Query("upload_date", enum=["title", "upload_date", "state"]),
+    order: str = Query("desc", enum=["asc", "desc"]),
+):
     """
     Récupérer les détails d'une playlist avec l'info de l'uploader et les vidéos associées.
     """
@@ -144,14 +214,27 @@ async def get_playlist_details(playlist_id: str, db: AsyncSession = Depends(get_
     
     if not playlist:
         raise HTTPException(status_code=404, detail="Playlist not found")
+    
+    # Mapping of valid sort fields
+    sort_column_map = {
+        "title": Video.title,
+        "upload_date": Video.upload_date,
+        "state": PlaylistVideo.state,
+    }
+
+    sort_column = sort_column_map.get(sort_by, Video.upload_date)
+
+    # Determine sort order
+    sort_expression = sort_column.asc() if order == "asc" else sort_column.desc()
 
     # Fetch related videos correctly
     videos_result = await db.execute(
-        select(Video)
+        select(Video, PlaylistVideo.state)
         .join(PlaylistVideo, PlaylistVideo.video_id == Video.id)
         .where(PlaylistVideo.playlist_id == playlist.id)
+        .order_by(sort_expression)
     )
-    videos = videos_result.scalars().all()
+    videos = videos_result.all()
 
 
     return {
@@ -165,10 +248,10 @@ async def get_playlist_details(playlist_id: str, db: AsyncSession = Depends(get_
         "default_quality": playlist.default_quality,
         "default_subtitles": playlist.default_subtitles,
         "uploader": {
-            "id": playlist.uploader.id if playlist.uploader else None,
-            "name": playlist.uploader.name if playlist.uploader else "Unknown",
-            "channel_url": playlist.uploader.channel_url if playlist.uploader else None,
-        },
+            "id": playlist.uploader.id,
+            "name": playlist.uploader.name,
+            "channel_url": playlist.uploader.channel_url,
+        } if playlist.uploader else None,
         "videos": [
             {
                 "id": video.source_id,
@@ -177,7 +260,7 @@ async def get_playlist_details(playlist_id: str, db: AsyncSession = Depends(get_
                 "duration": video.duration,
                 "upload_date": video.upload_date,
             }
-            for video in videos
+            for video, state in videos
         ]
     }
 
@@ -241,8 +324,6 @@ async def is_fetching_playlist(playlist_id: str):
     
 
 from utils.download_playlist import downloading
-from pydantic import BaseModel
-from typing import Optional
 
 class DownloadRequest(BaseModel):
     redownload_all: Optional[bool] = False  # Default to False if not provided
@@ -286,6 +367,39 @@ async def get_playlist_download_status(playlist_id: str):
         return {"message": "Playlist is being downloaded", "is_downloading": True}
     else:
         return {"message": "Playlist is not being downloaded", "is_downloading": False}
+
+from utils.download_video import download_video, downloading_videos
+@router.post("/{playlist_id}/videos/{video_id}/download")
+async def start_video_download(playlist_id: str, video_id: str, db: AsyncSession = Depends(get_db)):
+    """
+    Démarre le téléchargement d'une vidéo par son ID
+    """
+    result = await db.execute(select(Playlist).where(Playlist.source_id == playlist_id))
+    playlist = result.scalars().first()
+    if not playlist:
+        raise HTTPException(status_code=404, detail="Playlist not found") 
+    
+    result = await db.execute(select(Video).where(Video.source_id == video_id))
+    video = result.scalars().first()
+    if not video:
+        raise HTTPException(status_code=404, detail="Video not found")
+
+    result = await db.execute(
+        select(PlaylistVideo)
+        .where(PlaylistVideo.playlist_id == playlist.id, PlaylistVideo.video_id == video.id)
+    )
+    playlist_video = result.scalars().first()
+
+    if not playlist_video:
+        raise HTTPException(status_code=404, detail="Video not found in the playlist")
+    
+    if (playlist_video.playlist_id, playlist_video.video_id) in downloading_videos:
+        raise HTTPException(status_code=400, detail="Video is already being downloaded")
+
+    # Start the download process for the specific video
+    asyncio.create_task(download_video(playlist_video, playlist, video))
+
+    return {"message": "Download started for video", "video_id": video_id}
 
 
 @router.get("/{playlist_id}/videos/{video_id}/download_status")

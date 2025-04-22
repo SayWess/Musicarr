@@ -9,6 +9,7 @@ from websocket_manager import ws_manager
 from database.database import SessionLocal
 
 from utils.sanitize import sanitize_title
+from utils.download_uploader_avatar import start_download_avatar
 
 fetching = {}
 
@@ -47,7 +48,12 @@ async def fetch_playlist_info(playlist_url):
         stdout, stderr = await process.communicate()
         
         if process.returncode != 0:
-            print(f"yt-dlp error: {stderr.decode()}")
+            stderr = stderr.decode()
+            print(f"yt-dlp error: {stderr}")
+            if "Sign in" in stderr:
+                playlist_info = json.loads(stdout.decode())
+                return playlist_info
+            
             return None
 
         playlist_info = json.loads(stdout.decode())
@@ -86,16 +92,22 @@ async def fetch_and_store_playlist_info(playlist_url, db: AsyncSession):
 
     if not uploader:
         # Create a new uploader if not found
-        uploader = Uploader(
-            channel_id=playlist_info.get("channel_id"),
-            name=playlist_info.get("uploader"),
-            channel_url=playlist_info.get("channel_url") or f"https://www.youtube.com/channel/{playlist_info.get('channel_id')}"
-        )
-        db.add(uploader)
-        await db.flush()
-        print("Created new uploader:", uploader.name)
+        if playlist_info.get("channel_id") and playlist_info.get("uploader"):
+            uploader = Uploader(
+                channel_id=playlist_info.get("channel_id"),
+                name=playlist_info.get("uploader"),
+                channel_url=playlist_info.get("channel_url") or f"https://www.youtube.com/channel/{playlist_info.get('channel_id')}"
+            )
+            db.add(uploader)
+            await db.flush()
+            print("Created new uploader:", uploader.name)
+
+            print("Downloading uploader avatar...")
+            await start_download_avatar(uploader.channel_id, db)  # Download the uploader's avatar
     
-    await db.commit()  # Commit uploader creation
+            await db.commit()  # Commit uploader creation
+        
+    
 
     # Step 3: Create the playlist entry
     result = await db.execute(
@@ -105,13 +117,15 @@ async def fetch_and_store_playlist_info(playlist_url, db: AsyncSession):
 
     first_entry = playlist_info.get("entries", [])[0]  if playlist_info.get("entries") else {}
 
+    last_published = max([video.get("upload_date") for video in playlist_info.get("entries", []) if video]) or None
+
     if playlist:
        # Update existing playlist
         playlist.title = sanitize_title(playlist_info.get("title"))
         playlist.description = playlist_info.get("description")
         playlist.thumbnail = first_entry.get("thumbnail")
-        playlist.last_published = first_entry.get("upload_date")
-        playlist.uploader_id=uploader.id
+        playlist.last_published = last_published
+        playlist.uploader_id=uploader.id if uploader else None
 
         print("Updated existing playlist:", playlist.title)
     
@@ -122,8 +136,8 @@ async def fetch_and_store_playlist_info(playlist_url, db: AsyncSession):
             title=sanitize_title(playlist_info.get("title")),
             description=playlist_info.get("description"),
             thumbnail=first_entry.get("thumbnail"),
-            uploader_id=uploader.id,
-            last_published=first_entry.get("upload_date")
+            uploader_id=uploader.id if uploader else None,
+            last_published=last_published
         )
         db.add(playlist)
         await db.flush() # Flush to get the playlist ID
@@ -135,6 +149,10 @@ async def fetch_and_store_playlist_info(playlist_url, db: AsyncSession):
 
     # Step 4: Process each video in the playlist
     for entry in playlist_info.get("entries", []):
+        if not entry:
+            print("No video found in entry:", entry)
+            continue
+
         print("Video id", entry.get("id"))
         result = await db.execute(
             select(Video).filter(Video.source_id == entry.get('id'))
@@ -154,15 +172,19 @@ async def fetch_and_store_playlist_info(playlist_url, db: AsyncSession):
                     uploader.url = entry.get("uploader_url")
             else:
                 # Create a new uploader if not found
-                uploader = Uploader(
-                    source_id=entry.get("uploader_id"),
-                    name=entry.get("uploader"),
-                    url=entry.get("uploader_url"),
-                    channel_id=entry.get("channel_id"),
-                    channel_url=entry.get("channel_url") or f"https://www.youtube.com/channel/{entry.get('uploader_id')}"
-                )
-                db.add(uploader)
-                print("Created new uploader:", uploader.name)
+                if entry.get("uploader") and entry.get("channel_id"):
+                    uploader = Uploader(
+                        source_id=entry.get("uploader_id"),
+                        name=entry.get("uploader"),
+                        url=entry.get("uploader_url"),
+                        channel_id=entry.get("channel_id"),
+                        channel_url=entry.get("channel_url") or f"https://www.youtube.com/channel/{entry.get('uploader_id')}"
+                    )
+                    db.add(uploader)
+                    print("Created new uploader:", uploader.name)
+
+                    print("Downloading uploader avatar...")
+                    await start_download_avatar(uploader.channel_id, db)
             await db.commit()  # Commit uploader creation
 
             # If the video is not in the database, create a new video
@@ -173,7 +195,7 @@ async def fetch_and_store_playlist_info(playlist_url, db: AsyncSession):
                 thumbnail=entry.get("thumbnail"),
                 upload_date=entry.get("upload_date"),
                 duration=entry.get("duration_string"),
-                uploader_id=uploader.id  # Link the uploader to the video
+                uploader_id=uploader.id if uploader else None  # Link the uploader to the video
             )
             db.add(video)
             await db.flush()
@@ -227,12 +249,12 @@ async def fetch_full_playlist(playlist_id: str, playlist_title: str = None):
         print(f"Failed to fetch playlist info for {playlist_id}.")
         await ws_manager.send_message(
             "playlists", 
-            {"playlist_id": playlist_id, "fetch_success": False, "playlist_title": playlist_title, "message": "Failed to fetch playlist info" }
+            {"playlist_id": playlist_id, "fetch_success": False, "playlist_title": playlist_title or playlist_id, "message": "Failed to fetch playlist info" }
         )
     else:
         print(f"Fetched full playlist info for {playlist_id}.")
 
         await ws_manager.send_message(
             "playlists", 
-            {"playlist_id": playlist_id, "fetch_success": True, "playlist_title": playlist_title, "message": "Fetched full playlist info" }
+            {"playlist_id": playlist_id, "fetch_success": True, "playlist_title": playlist_title or result or playlist_id, "message": "Fetched full playlist info" }
         )

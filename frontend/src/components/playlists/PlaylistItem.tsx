@@ -1,24 +1,35 @@
 "use client";
 import Image from "next/image";
 import Link from "next/link";
-import { CheckCircle, Circle } from "lucide-react";
+import { CheckCircle, Circle, User } from "lucide-react";
 import { Playlist } from "@/types/models";
 import usePlaylists from "@/hooks/usePlaylists";
 import { endpointPlaylists } from "@/constants/endpoints";
 import { useEffect } from "react";
 import { useState } from "react";
 import { useWebSocket } from "@/hooks/useWebSocket";
-import { endpointWebSocketPlaylists } from "@/constants/endpoints";
+import {
+  endpointWebSocketPlaylists,
+  endpointUploadersAvatar,
+} from "@/constants/endpoints";
 import { toast } from "sonner";
 import useSWR from "swr";
 import { fetcher } from "@/utils/fetcher";
+import { motion } from "framer-motion";
+import clsx from "clsx";
 
-export const PlaylistItem = ({ playlist }: { playlist: Playlist }) => {
-  const { toggleCheckEveryDay } = usePlaylists();
-  // const hasMissingVideos = playlist.missing_videos > 0;
-
+export const PlaylistItem = ({
+  playlist,
+  toggleCheckEveryDay,
+  isGridSmall,
+}: {
+  playlist: Playlist;
+  toggleCheckEveryDay: (id: string) => void;
+  isGridSmall: boolean;
+}) => {
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [isDownloading, setIsDownloading] = useState(false);
+  const [avatarError, setAvatarError] = useState(false);
 
   const { data: data, isLoading } = useSWR(
     `${endpointPlaylists}/${playlist.id}/number_of_videos_downloaded`,
@@ -76,22 +87,30 @@ export const PlaylistItem = ({ playlist }: { playlist: Playlist }) => {
     };
   }, [playlist.id]);
 
-  const missing_videos = data?.total_videos - data?.downloaded_videos
-  
-  const hasMissingVideos = missing_videos > 0;
+  const avatarUrl = playlist.uploader_id
+    ? `${endpointUploadersAvatar}/${encodeURIComponent(
+        playlist.uploader_id
+      )}.jpg`
+    : "";
+
+  const styles = {
+    title: {
+      fontSize: `${isGridSmall ? "0.8rem" : "1.1rem"}`,
+      color: "#E5E7EB",
+    },
+  };
 
   return (
     <Link
       href={`/playlists/${playlist.id}`}
       prefetch={true}
-      className={`block bg-gray-900 text-gray-200 rounded-xl shadow-md relative overflow-hidden transition-all duration-300 hover:shadow-xl hover:scale-105 hover:ring-2 hover:ring-blue-500/50 
-      ${isRefreshing ? "animate-pulse bg-gradient-to-r from-blue-900/50" : ""}
-      ${
-        isDownloading && !isRefreshing
-          ? "animate-pulse bg-gradient-to-r from-green-900/50"
-          : ""
-      }
-        `}
+      className={clsx(
+        "block bg-gray-900 text-gray-200 rounded-xl shadow-md relative overflow-hidden transition-all duration-300 hover:shadow-xl hover:scale-105 hover:ring-2 hover:ring-blue-500/50 ",
+        {
+          "border-glow-blue": isRefreshing,
+          "border-glow-green": isDownloading && !isRefreshing,
+        }
+      )}
     >
       {/* Thumbnail Container */}
       <div className="relative group overflow-hidden rounded-xl">
@@ -102,8 +121,9 @@ export const PlaylistItem = ({ playlist }: { playlist: Playlist }) => {
           priority={true}
           width={200}
           height={100}
-          className="w-full min-h-40 object-cover transition-transform duration-300 group-hover:scale-105"
+          className="w-full min-h-25 object-cover transition-transform duration-300 group-hover:scale-105"
         />
+
 
         {/* Stronger Gradient Overlay & Title */}
         <div className="absolute bottom-0 left-0 w-full bg-gradient-to-t from-black/80 to-transparent pl-2 pt-3 pr-2 pb-1">
@@ -115,45 +135,83 @@ export const PlaylistItem = ({ playlist }: { playlist: Playlist }) => {
           </h2>
         </div>
 
-        {/* Daily Check Toggle (Top-Right Corner) */}
+        {/* Daily Check Toggle (Bottom-Right Corner) */}
         <button
-          className="absolute top-2 right-2 bg-gray-900 bg-opacity-75 rounded-full p-1 hover:bg-gray-800 transition duration-200"
+          className="absolute bottom-1 right-2 bg-gray-900 bg-opacity-75 rounded-full p-1 hover:bg-gray-800 transition duration-200"
           onClick={(e) => {
             e.preventDefault();
             e.stopPropagation();
             toggleCheckEveryDay(playlist.id);
           }}
         >
-          {playlist.check_every_day ? (
-            <CheckCircle size={20} className="text-blue-500" />
-          ) : (
-            <Circle size={20} className="text-gray-400" />
-          )}
+          <motion.div
+            key={playlist.check_every_day ? "checked" : "unchecked"}
+            initial={{ opacity: 0, scale: 0.8 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.8 }}
+            transition={{ duration: 0.2 }}
+          >
+            {playlist.check_every_day ? (
+              <CheckCircle
+                size={isGridSmall ? 15 : 20}
+                className="text-blue-500"
+              />
+            ) : (
+              <Circle size={isGridSmall ? 15 : 20} className="text-gray-400" />
+            )}
+          </motion.div>
         </button>
+
+        {/* Uploader Avatar */}
+        <div className="absolute top-2 right-2 rounded-full ring-4 ring-gray-800 bg-gray-800 transition-transform duration-300 group-hover:scale-0">
+          {!avatarError && avatarUrl !== "" ? (
+            <Image
+              className={`bg-gray-900 rounded-full h-auto ${
+                isGridSmall ? "w-[24px]" : "w-[40px]"
+              } ring-2 ${
+                playlist.check_every_day ? "ring-blue-500" : "ring-white"
+              }
+             bg-gray-800 shadow-md`}
+              src={avatarUrl}
+              onError={() => setAvatarError(true)}
+              width={64}
+              height={64}
+              priority
+              alt={"Uploader avatar"}
+            />
+          ) : (
+            <User
+              size={64}
+              className={`bg-gray-900 rounded-full h-auto ${
+                isGridSmall ? "w-[24px]" : "w-[40px]"
+              } ring-2 ${
+                playlist.check_every_day ? "ring-blue-500" : "ring-white"
+              } bg-gray-800 shadow-md`}
+            />
+          )}
+        </div>
 
         {/* Missing Videos Indicator (Bottom-Left) */}
         <span
-          className={`absolute top-2 left-2 px-2 py-1 text-xs font-semibold rounded-md transition-all duration-300 ${
-            !isLoading && data && data.total_videos !== data.downloaded_videos
-              ? "bg-red-500 text-white"
-              : "bg-green-500 text-white"
-          }`}
+          className={`absolute top-2 left-2 py-1 text-xs font-semibold rounded-md transition-all duration-300 ${
+            !isLoading && data && data.total_videos === data.downloaded_videos
+              ? "bg-green-500 text-white"
+              : "bg-red-500 text-white"
+          }
+          ${isGridSmall ? "text-[10px] px-[0.4rem]" : "px-2"}
+          `}
         >
           {isLoading ? (
             <span className="animate-pulse"></span>
           ) : (
-            <span>{data.total_videos !== data.downloaded_videos ? data.total_videos - data.downloaded_videos : ""}</span>
+            <span>
+              {data.total_videos !== data.downloaded_videos
+                ? data.total_videos - data.downloaded_videos
+                : ""}
+            </span>
           )}
-          {/* {hasMissingVideos ? `${playlist.missing_videos}` : ""} */}
         </span>
       </div>
     </Link>
   );
-};
-
-const styles = {
-  title: {
-    fontSize: "1.1rem",
-    color: "#E5E7EB",
-  },
 };

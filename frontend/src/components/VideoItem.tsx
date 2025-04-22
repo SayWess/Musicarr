@@ -4,7 +4,8 @@ import { VideoDetails } from "@/types/models";
 import VideoStatus from "./buttons/VideoStatus";
 import useSWR from "swr";
 import { endpointPlaylists } from "@/constants/endpoints";
-import axios from "axios";
+import { formatDate } from "@/utils/formatDate";
+import { fetcher } from "@/utils/fetcher";
 
 type VideoItemProps = {
   playlist_id: string;
@@ -12,9 +13,8 @@ type VideoItemProps = {
   progress: number | undefined;
   download_stage: string;
   onDownload: (videoId: string) => void;
+  openThumbnailModal: (url: string) => void;
 };
-
-const fetcher = (url: string) => axios.get(url).then((res) => res.data);
 
 export const VideoItem = ({
   playlist_id,
@@ -22,10 +22,17 @@ export const VideoItem = ({
   progress,
   download_stage,
   onDownload,
+  openThumbnailModal,
 }: VideoItemProps) => {
 
-  const { data: download_status, error, isLoading } = useSWR(`${endpointPlaylists}/${playlist_id}/videos/${video.id}/download_status`, fetcher);
-    
+  const {
+    data: download_status,
+    error,
+    isLoading,
+  } = useSWR(
+    `${endpointPlaylists}/${playlist_id}/videos/${video.id}/download_status`,
+    fetcher
+  );
   const isDownloaded = download_status?.status === "DOWNLOADED";
   const downloading = download_status?.status === "DOWNLOADING";
   const isError = download_status?.status === "ERROR";
@@ -44,11 +51,13 @@ export const VideoItem = ({
         alt={video.title}
         width={120}
         height={68}
-        className="rounded-md h-auto shadow-md"
+        className="rounded-md h-auto w-20 md:w-auto shadow-md aspect-video object-cover cursor-zoom-in transition-all duration-300 hover:shadow-xl hover:scale-[1.05]"
+        onClick={() => openThumbnailModal(video.thumbnail)}
+        priority={true}
       />
 
       <div className="ml-4 flex-1">
-        <h3 className="text-sm md:text-lg font-semibold line-clamp-2">
+        <h3 className="text-xs md:text-lg font-semibold line-clamp-2">
           {video.title}
         </h3>
 
@@ -56,7 +65,7 @@ export const VideoItem = ({
           ⏳ {video.duration} • 📺 {video.quality}
         </p>
         <p className="text-gray-500 text-xs mt-1">
-          Published: {video.upload_date}
+          Published: {formatDate(video.upload_date)}
         </p>
       </div>
 

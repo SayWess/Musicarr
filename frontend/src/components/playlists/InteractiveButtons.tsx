@@ -50,13 +50,13 @@ const InteractiveButtons = ({
   };
 
   return (
-    <div className="flex lg:flex-col gap-4 justify-around self-center mt-4">
+    <div className="flex lg:flex-col gap-4 justify-around self-center">
 
 
       <EditButton onClick={openEdit} />
-      <DeleteButton onClick={openDelete} isDownloading={isDownloading} />
+      <DeleteButton onClick={openDelete} isRefreshing={isRefreshing} isDownloading={isDownloading} />
       <RefreshButton onClick={onRefresh} isRefreshing={isRefreshing} isDownloading={isDownloading} />
-      <DownloadPlaylistButton onClick={openDownload} isDownloading={isDownloading} />
+      <DownloadPlaylistButton onClick={openDownload} isRefreshing={isRefreshing} isDownloading={isDownloading} />
 
       <DeleteModal
         isDeleteOpen={isDeleteOpen}

@@ -1,56 +1,25 @@
-"use client";
+import { cookies } from "next/headers";
+import { endpointPlaylists } from "@/constants/endpoints";
+import axios from "axios";
+import { SortOrder, SortField } from "@/constants/sortFields";
+import Playlists from "@/components/playlists/PlaylistsGrid";
 
-import { PlaylistItem } from "@/components/playlists/PlaylistItem";
-import usePlaylists from "@/hooks/usePlaylists";
-import { Playlist } from "@/types/models";
-import AddItem from "@/components/AddItem";
+export default async function PlaylistsPage() {
+  const cookieStore = await cookies();
+  const sortBy = (cookieStore.get("playlists_sort_by")?.value || "title") as SortField;
+  const sortOrder = (cookieStore.get("playlists_order")?.value || "desc") as SortOrder;
+  const gridSize = cookieStore.get("playlists_grid_size")?.value || "false";
 
-
-export default function Playlists() {
-  const { playlists, isLoading, isError } = usePlaylists();
-
-  if (isLoading) {
-    return (
-      <div className="flex items-center justify-center h-screen">
-        <p className="text-gray-400 text-lg animate-pulse">
-          Loading playlists...
-        </p>
-      </div>
-    );
-  }
-
-  if (isError) {
-    return (
-      <div className="flex items-center justify-center h-screen">
-        <p className="text-red-500 text-lg font-semibold">
-          Failed to load playlists. 😢
-        </p>
-      </div>
-    );
-  }
-
+  const res = await axios.get(
+    `${endpointPlaylists}?sort_by=${sortBy}&order=${sortOrder}`
+  );
 
   return (
-    <div className="p-6 pb-24">
-      <h1 className="text-3xl font-bold text-gray-200 mb-6">
-        Manage Playlists
-      </h1>
-
-      <AddItem />
-
-      <div className="" style={styles.grid}>
-        {playlists.map((playlist: Playlist) => (
-          <PlaylistItem key={playlist.id} playlist={playlist} />
-        ))}
-      </div>
-    </div>
+    <Playlists
+      initialPlaylists={res.data}
+      initialSortBy={sortBy}
+      initialSortOrder={sortOrder}
+      initialIsGridSmall={gridSize === "true"}
+    />
   );
-}
-
-const styles = {
-  grid: {
-    display: "grid",
-    gridTemplateColumns: "repeat(auto-fill, minmax(225px, 1fr))",
-    gap: "1.5rem",
-  },
 }

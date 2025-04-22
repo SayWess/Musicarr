@@ -17,7 +17,6 @@ async def start_download_video(playlist: Playlist, video: Video):
             "--no-playlist",  # just in case
             "--embed-thumbnail",
             "-o", get_output_path(playlist),
-            video.source_id
         ]
 
         if playlist.default_format == DownloadFormat.AUDIO:
@@ -33,6 +32,11 @@ async def start_download_video(playlist: Playlist, video: Video):
 
         if playlist.default_subtitles:
             command.extend(["--write-sub", "--sub-lang", "en", "--convert-subs", "srt"])
+
+        command.extend([
+            "--", # Ensures that there's no options anymore,so if the URL starts with a dash, it won't be interpreted as an option
+            video.source_id
+        ])
 
         print("Command:", command)
         print("Starting yt-dlp command...")
