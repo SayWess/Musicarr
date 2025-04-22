@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import selectinload
 from database.database import get_db
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, func
+from sqlalchemy import select, func, desc, asc
 from database.models import Playlist, PlaylistVideo, DownloadState, Video, Uploader
 import asyncio
 from utils.fetchPlaylistInfo import fetch_full_playlist
@@ -16,40 +16,74 @@ from websocket_manager import ws_manager
 router = APIRouter()
 
 
+VALID_SORT_FIELDS = {
+    "title": Playlist.title,
+    "last_published": Playlist.last_published,  # supposer que ce champ existe
+    "uploader": Playlist.uploader_id,
+}
+
 @router.get("/")
-async def get_playlists(db: AsyncSession = Depends(get_db)):
-    """
-    Récupérer la liste des playlists avec le nombre de vidéos non téléchargées (calculé via COUNT SQL)
-    """
-    # Query to fetch playlists with count of missing videos
-    result = await db.execute(
+async def get_playlists(
+    db: AsyncSession = Depends(get_db),
+    sort_by: str = Query("title", enum=["title", "last_update", "state", "videos_count", "downloaded_count", "missing_count", "uploader"], description="Field to sort by"),
+    order: str = Query("asc", enum=["asc", "desc"], description="Sort order"),
+):
+    # Aliases pour count custom
+    downloaded_count = func.count(PlaylistVideo.id).filter(PlaylistVideo.state == DownloadState.DOWNLOADED).label("downloaded_count")
+    missing_count = func.count(PlaylistVideo.id).filter(PlaylistVideo.state != DownloadState.DOWNLOADED).label("missing_count")
+    videos_count = func.count(PlaylistVideo.id).label("videos_count")
+
+    # Base query
+    query = (
         select(
+            Playlist.id,
             Playlist.source_id,
             Playlist.title,
             Playlist.thumbnail,
             Playlist.check_every_day,
             Playlist.folder,
-            func.count(PlaylistVideo.id).filter(PlaylistVideo.state != DownloadState.DOWNLOADED).label("missing_videos"),
+            Playlist.last_published,
             Playlist.uploader_id,
+            videos_count,
+            downloaded_count,
+            missing_count,
         )
-        .outerjoin(Playlist.videos)  # Join to count related videos
+        .outerjoin(Playlist.videos)
         .group_by(Playlist.id)
     )
 
+    # Ajout du tri
+    if sort_by in ["downloaded_count", "missing_count", "videos_count"]:
+        sort_column = {
+            "downloaded_count": downloaded_count,
+            "missing_count": missing_count,
+            "videos_count": videos_count,
+        }[sort_by]
+    elif sort_by in VALID_SORT_FIELDS:
+        sort_column = VALID_SORT_FIELDS[sort_by]
+    else:
+        sort_column = Playlist.title  # fallback
+
+    query = query.order_by(asc(sort_column) if order == "asc" else desc(sort_column))
+
+    # Execute and format
+    result = await db.execute(query)
     playlists = result.all()
 
-    # Convert to JSON-friendly response
     return [
         {
-            "id": source_id,
-            "title": title,
-            "check_every_day": check_every_day,
-            "thumbnail": thumbnail,  # Assuming thumbnail is stored as folder/id.jpg
-            "folder": folder,
-            "missing_videos": missing_videos,
-            "uploader_id": uploader_id,
+            "id": row.source_id,
+            "title": row.title,
+            "thumbnail": row.thumbnail,
+            "check_every_day": row.check_every_day,
+            "folder": row.folder,
+            "last_published": row.last_published,
+            "uploader_id": row.uploader_id,
+            # "videos_count": row.videos_count,
+            # "downloaded_count": row.downloaded_count,
+            "missing_count": row.missing_count,
         }
-        for source_id, title, thumbnail, check_every_day, folder, missing_videos, uploader_id in playlists if source_id != 0
+        for row in playlists if row.source_id != 0
     ]
 
 
