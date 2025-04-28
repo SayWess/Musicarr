@@ -11,10 +11,9 @@ interface PlaylistPageParams {
   id: string;
 }
 
-export default async function PlaylistPage({ params }: { params: PlaylistPageParams }) {
+export default async function PlaylistPage({ params }: { params: Promise<PlaylistPageParams> }) {
   const cookieStore = await cookies();
-  const params_ = await params;
-  const { id } = params_;
+  const { id } = await params;
   const sortBy = (cookieStore.get("sort_by")?.value || "upload_date") as SortField;
   const sortOrder = (cookieStore.get("order")?.value || "desc") as SortOrder;
 

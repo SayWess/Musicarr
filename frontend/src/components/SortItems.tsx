@@ -76,14 +76,15 @@ export const SortVideos = ({
 
   return (
     <>
-      {showOptions && <div className="fixed w-full h-full z-25"></div>}
-      <div className="fixed left-1/2 bottom-1 mb-10 md:mb-2 transform -translate-x-1/2 z-20 flex gap-2">
+      <div className="fixed left-1/2 bottom-1 mb-10 md:mb-2 transform -translate-x-1/2 z-25 flex gap-2">
         <button
           onClick={() => setShowOptions(!showOptions)}
-          className="px-4 py-2 bg-blue-600 text-white rounded-full shadow-lg"
+          className="px-4 py-2 bg-blue-600 text-white z-20 rounded-full shadow-lg"
         >
           <ArrowDownUp size={20} />
         </button>
+
+        {showOptions && <div className="fixed w-full h-full z-25"></div>}
 
         {showOptions && (
           <div
