@@ -1,70 +1,16 @@
-import subprocess
-import json
 from database.models import Playlist, Video, Uploader, PlaylistVideo  # Import your models
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
-import asyncio
 
 from websocket_manager import ws_manager
 from database.database import SessionLocal
 
 from utils.sanitize import sanitize_title
-from utils.download_uploader_avatar import start_download_avatar
+from utils.download_uploader_avatar import download_uploader_avatar
+from utils.fetch_item_info import fetch_item_info
 
 fetching = {}
 
-
-async def fetch_playlist_info(playlist_url):
-    """
-    Récupère les informations d'une playlist et de ses vidéos associées via yt-dlp.
-
-    Args:
-        playlist_url (str): URL de la playlist YouTube.
-
-    Returns:
-        dict: Dictionnaire avec les informations de la playlist et des vidéos.
-    """
-    try:
-        # Commande yt-dlp à exécuter dans le terminal
-        command = [
-            "yt-dlp", 
-            # "--flat-playlist",  # Ne pas télécharger, juste lister les vidéos
-            # "--skip-download",  # Ne pas télécharger les vidéos
-            "-J",  # Sortie en JSON, dump toutes les infos
-            "-i",
-            # "--no-warnings",
-            # "--ignore-no-formats-error",
-            playlist_url
-        ]
-        # print("Command:", command)
-        print("Starting yt-dlp command...")
-
-        process = await asyncio.create_subprocess_exec(
-            *command,
-            stdout=asyncio.subprocess.PIPE,
-            stderr=asyncio.subprocess.PIPE
-        )
-
-        stdout, stderr = await process.communicate()
-        
-        if process.returncode != 0:
-            stderr = stderr.decode()
-            print(f"yt-dlp error: {stderr}")
-            if "Sign in" in stderr:
-                playlist_info = json.loads(stdout.decode())
-                return playlist_info
-            
-            return None
-
-        playlist_info = json.loads(stdout.decode())
-        return playlist_info
-        
-    except subprocess.CalledProcessError as e:
-        print(f"Erreur d'exécution yt-dlp: {e}")
-        return None
-    except json.JSONDecodeError as e:
-        print(f"Erreur de décodage JSON: {e}")
-        return None
 
 
 async def fetch_and_store_playlist_info(playlist_url, db: AsyncSession):
@@ -79,7 +25,7 @@ async def fetch_and_store_playlist_info(playlist_url, db: AsyncSession):
         bool: True if the playlist and videos were added successfully, else False.
     """
     # Step 1: Fetch playlist info using yt-dlp (can use your existing method)
-    playlist_info = await fetch_playlist_info(playlist_url)
+    playlist_info = await fetch_item_info(playlist_url)
     if not playlist_info:
         print("Failed to fetch playlist info.")
         return False
@@ -103,7 +49,7 @@ async def fetch_and_store_playlist_info(playlist_url, db: AsyncSession):
             print("Created new uploader:", uploader.name)
 
             print("Downloading uploader avatar...")
-            await start_download_avatar(uploader.channel_id, db)  # Download the uploader's avatar
+            await download_uploader_avatar(uploader.id, db)  # Download the uploader's avatar
     
             await db.commit()  # Commit uploader creation
         
@@ -181,10 +127,11 @@ async def fetch_and_store_playlist_info(playlist_url, db: AsyncSession):
                         channel_url=entry.get("channel_url") or f"https://www.youtube.com/channel/{entry.get('uploader_id')}"
                     )
                     db.add(uploader)
+                    await db.flush()  # Flush to get the uploader ID
                     print("Created new uploader:", uploader.name)
 
                     print("Downloading uploader avatar...")
-                    await start_download_avatar(uploader.channel_id, db)
+                    await download_uploader_avatar(uploader.id, db)
             await db.commit()  # Commit uploader creation
 
             # If the video is not in the database, create a new video
