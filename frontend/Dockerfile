@@ -42,8 +42,8 @@ CMD ["node", "server.js"]
 
 
 
-# # Development image
-# FROM deps AS dev
-# ENV NODE_ENV=development
-# COPY . .
-# CMD ["npm", "run", "dev"]
+# Development image
+FROM deps AS dev
+ENV NODE_ENV=development
+COPY . .
+CMD ["npm", "run", "dev"]

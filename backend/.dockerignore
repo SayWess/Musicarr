@@ -1,0 +1,11 @@
+Dockerfile
+.dockerignore
+__pycache__
+venv
+README.md
+.env*
+.git
+.gitignore
+database/alembic/versions/*
+downloads/*
+metadata/avatar/*

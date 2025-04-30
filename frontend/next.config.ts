@@ -10,6 +10,10 @@ const nextConfig: NextConfig = {
       {
         protocol: "http",
         hostname: "192.168.146.221"
+      },
+      {
+        protocol: "http",
+        hostname: "musicarr-backend"
       }
     ], // Add domains for youtube images
   },
