@@ -409,7 +409,7 @@ async def start_video_download(playlist_id: str, video_id: str, db: AsyncSession
     if (playlist_video.playlist_id, playlist_video.video_id) in downloading_videos:
         raise HTTPException(status_code=400, detail="Video is already being downloaded")
 
-    if (playlist_video.video_id) in fetching_videos:
+    if video_id in fetching_videos:
         raise HTTPException(status_code=400, detail="Video is being fetched")
 
     # Start the download process for the specific video
