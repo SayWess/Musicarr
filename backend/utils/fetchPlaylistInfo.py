@@ -196,12 +196,12 @@ async def fetch_full_playlist(playlist_id: str, playlist_title: str = None):
         print(f"Failed to fetch playlist info for {playlist_id}.")
         await ws_manager.send_message(
             "playlists", 
-            {"playlist_id": playlist_id, "fetch_success": False, "playlist_title": playlist_title or playlist_id, "message": "Failed to fetch playlist info" }
+            {"playlist_id": playlist_id, "fetch_success": False, "message": f"Failed to fetch info for playlist : {playlist_title or playlist_id}" }
         )
     else:
         print(f"Fetched full playlist info for {playlist_id}.")
 
         await ws_manager.send_message(
             "playlists", 
-            {"playlist_id": playlist_id, "fetch_success": True, "playlist_title": playlist_title or result or playlist_id, "message": "Fetched full playlist info" }
+            {"playlist_id": playlist_id, "fetch_success": True, "message": f"Successfully fetched info for playlist : {playlist_title or playlist_id}" }
         )
