@@ -6,6 +6,8 @@ import useSWR from "swr";
 import { endpointPlaylists } from "@/constants/endpoints";
 import { formatDate } from "@/utils/formatDate";
 import { fetcher } from "@/utils/fetcher";
+import React from "react";
+import { CheckCircle2 } from "lucide-react";
 
 type VideoItemProps = {
   playlist_id: string;
@@ -14,6 +16,8 @@ type VideoItemProps = {
   download_stage: string;
   onDownload: (videoId: string) => void;
   openThumbnailModal: (url: string) => void;
+  isSelected?: boolean;
+  isSelectable?: boolean;
 };
 
 export const VideoItem = ({
@@ -23,6 +27,8 @@ export const VideoItem = ({
   download_stage,
   onDownload,
   openThumbnailModal,
+  isSelected = false,
+  isSelectable = false
 }: VideoItemProps) => {
 
   const {
@@ -37,6 +43,8 @@ export const VideoItem = ({
   const downloading = download_status?.status === "DOWNLOADING";
   const isError = download_status?.status === "ERROR";
 
+  
+
   return (
     <div
       className={`flex items-center bg-gray-900 text-gray-200 p-2 md:p-4 rounded-lg shadow-md transition-all duration-300
@@ -44,10 +52,13 @@ export const VideoItem = ({
       ${isDownloaded ? "bg-green-900/20" : ""}
       ${downloading ? "bg-blue-900/20" : ""}
       ${isError ? "bg-red-900/20" : ""}
+      ${!downloading && isSelectable && isSelected ? "ring-2 ring-green-500/50 hover:ring-green-500/50" : ""}
+      ${downloading && isSelectable ? "select-blocked" : ""}
       `}
+      
     >
       <Image
-        src={video.thumbnail}
+        src={video.thumbnail || "/video.jpeg"}
         alt={video.title}
         width={120}
         height={68}
@@ -62,14 +73,14 @@ export const VideoItem = ({
         </h3>
 
         <p className="text-gray-400 text-xs md:text-sm mt-1">
-          ⏳ {video.duration} • 📺 {video.quality}
+          ⏳ {video.duration || "00:00"} • 📺 {video.quality || "Default"}
         </p>
         <p className="text-gray-500 text-xs mt-1">
           Published: {formatDate(video.upload_date)}
         </p>
       </div>
 
-      <VideoStatus
+      {(downloading || !isSelectable) && <VideoStatus
         video={video}
         progress={progress}
         download_stage={download_stage}
@@ -77,7 +88,13 @@ export const VideoItem = ({
         download_status={download_status?.status}
         error={error}
         isLoading={isLoading}
-      />
+      />}
+
+      {!downloading && isSelectable && (
+        <div className="text-blue-400 z-10">
+          {isSelected ? <CheckCircle2 size={24} /> : <div className="w-6 h-6 rounded-full border border-gray-500" />}
+        </div>
+      )}
     </div>
   );
 };

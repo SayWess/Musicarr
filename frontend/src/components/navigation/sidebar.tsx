@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { Download, ListMusic, Settings, ChevronLeft, ChevronRight } from "lucide-react";
+import { Download, ListMusic, ListVideo, Settings, ChevronLeft, ChevronRight } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
@@ -9,6 +9,7 @@ import { useState } from "react";
 const navItems = [
   { name: "Downloads", href: "/downloads", icon: <Download size={20} /> },
   { name: "Playlists", href: "/playlists", icon: <ListMusic size={20} /> },
+  { name: "Videos", href: "/videos", icon: <ListVideo size={20} /> },
   { name: "Settings", href: "/settings", icon: <Settings size={20} /> },
 ];
 
@@ -18,7 +19,8 @@ export default function Sidebar() {
 
   // Adjusts highlighting for playlist detail pages
   const isActive = (href: string) => {
-    if (href === "/playlists") return pathname.startsWith("/playlists");
+    if (href === "/videos") return pathname === "/playlists/0";
+    if (href === "/playlists") return pathname.startsWith("/playlists") && pathname !== "/playlists/0";
     return pathname === href;
   };
 

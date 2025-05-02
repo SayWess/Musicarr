@@ -184,3 +184,34 @@ body {
   pointer-events: none;
   border-radius: 0.75rem;
 }
+
+
+/* Prevent clicking on downloading item */
+.select-blocked {
+  opacity: 0.5;
+  pointer-events: none;
+  cursor: not-allowed;
+  filter: grayscale(70%);
+  position: relative;
+}
+
+.select-blocked::after {
+  content: "Downloading – can't select";
+  position: absolute;
+  bottom: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(0, 0, 0, 0.85);
+  color: white;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  white-space: nowrap;
+  opacity: 1; /* Always visible or 0 and .selectBlocked:hover::after */
+  pointer-events: none;
+  /* transition: opacity 0.3s; */
+}
+
+/* .selectBlocked:hover::after {
+  opacity: 1;
+} */

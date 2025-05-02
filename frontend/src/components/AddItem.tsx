@@ -8,23 +8,33 @@ import { extractYouTubeId } from "@/utils/extractYouTubeId";
 import { mutate } from "swr";
 import errorToast from "./toasts/errorToast";
 import infoToast from "./toasts/infoToast";
-import successToast from "./toasts/successToast";
 
 const AddItem = () => {
   const [url, setUrl] = useState("");
   const [loading, setLoading] = useState(false);
   const [open, setOpen] = useState(false);
-  // const { connect, disconnect, isConnected } = useWebSocket();
   const actuelRoute = window.location.pathname;
-  const itemType = actuelRoute.includes("playlists") ? "Playlist" : "Video";
+  const itemType = actuelRoute.includes("videos") ? "Video" : "Playlist";
 
   const handleDataFetch = async () => {
     if (!url.trim()) return;
 
-    const extracted = extractYouTubeId(url);
+    const extracted = extractYouTubeId(url, itemType);
     if (!extracted) {
       setOpen(false);
-      errorToast("Invalid YouTube URL!");
+      errorToast(`Not a ${itemType} or is an invalid URL!`);
+      return;
+    }
+
+    if (extracted.type === "playlists" && itemType === "Video") {
+      setOpen(false);
+      errorToast("You cannot add a playlist as a video!");
+      return;
+    }
+
+    if (extracted.type === "videos" && itemType === "Playlist") {
+      setOpen(false);
+      errorToast("You cannot add a video as a playlist!");
       return;
     }
 
@@ -41,12 +51,9 @@ const AddItem = () => {
         return;
       }
 
-      mutate(`${endpointApi}/${extracted.type}`);
+      extracted.type == "playlists" ? mutate(`${endpointApi}/${extracted.type}`) : mutate(`${endpointApi}/playlists/0/details`);
 
-      infoToast(
-        `Fetching data for ${extracted.type.substring(0, -1)}: ${extracted.id}`
-      );
-      successToast(`${itemType} added!`);
+      infoToast(`Fetching data for ${extracted.type.substring(0, -1)}: ${extracted.id}`);
     } catch (error) {
       console.error("Error fetching data:", error);
       errorToast("Failed to fetch data.");

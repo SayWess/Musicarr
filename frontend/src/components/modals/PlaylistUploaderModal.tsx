@@ -100,8 +100,6 @@ export const PlaylistUploaderModal = ({
     }
   };
 
-  // console.log(uploader?.id, "Uploader ID");
-
   useWebSocket(
     `${endpointWebSocketUploaders}`,
     handleMessage,
