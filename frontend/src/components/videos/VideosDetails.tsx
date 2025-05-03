@@ -39,6 +39,7 @@ import { COOKIE_KEY_VIDEOS } from "@/constants/cookies_keys";
 import AddItem from "../AddItem";
 import SelectingBar from "./SelectingBar";
 import { useLongClick } from "@/hooks/useLongClick";
+import { start } from "node:repl";
 
 interface PlaylistDetailsProps {
   id: string;
@@ -112,7 +113,7 @@ export default function VideosDetails({
     }
   };
 
-  const { start: startLongClick, stop: stopLongClick } = useLongClick(() => {
+  const { start: startLongClick, stop: stopLongClick, move} = useLongClick(() => {
     if (isDownloading) {
       errorToast("\"Select mode\" not available : Playlist is downloading.");
       return;
@@ -399,9 +400,11 @@ export default function VideosDetails({
             <div
               key={video.id}
               onMouseDown={startLongClick}
+              onMouseMove={move}
               onMouseUp={stopLongClick}
               onTouchStart={startLongClick}
               onTouchEnd={stopLongClick}
+              onTouchMove={move}
               onClick={() => (isSelecting ? handleSelect(video.id) : null)}
             >
               <VideoItem
