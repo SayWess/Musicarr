@@ -55,3 +55,22 @@ export const useLongClick = (
 
   return { start, stop, move };
 };
+
+
+export const useLongClickHandlers = (
+  callback: () => void,
+  delay = 500,
+  moveThreshold = 10
+) => {
+  const { start, stop, move } = useLongClick(callback, delay, moveThreshold);
+
+  return {
+    onMouseDown: (e: React.MouseEvent) => start(e.nativeEvent),
+    onMouseMove: (e: React.MouseEvent) => move(e.nativeEvent),
+    onMouseUp: stop,
+    onTouchStart: (e: React.TouchEvent) => start(e.nativeEvent),
+    onTouchMove: (e: React.TouchEvent) => move(e.nativeEvent),
+    onTouchEnd: stop,
+  };
+};
+

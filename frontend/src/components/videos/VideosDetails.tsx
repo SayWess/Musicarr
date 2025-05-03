@@ -38,8 +38,7 @@ import infoToast from "../toasts/infoToast";
 import { COOKIE_KEY_VIDEOS } from "@/constants/cookies_keys";
 import AddItem from "../AddItem";
 import SelectingBar from "./SelectingBar";
-import { useLongClick } from "@/hooks/useLongClick";
-import { start } from "node:repl";
+import { useLongClickHandlers } from "@/hooks/useLongClick";
 
 interface PlaylistDetailsProps {
   id: string;
@@ -113,13 +112,13 @@ export default function VideosDetails({
     }
   };
 
-  const { start: startLongClick, stop: stopLongClick, move} = useLongClick(() => {
+  const longClickHandlers = useLongClickHandlers(() => {
     if (isDownloading) {
       errorToast("\"Select mode\" not available : Playlist is downloading.");
       return;
     }
     setIsSelecting(true);
-  });
+  })
 
   const webSocketKey = `playlist-details-${id}`;
   useWebSocket(
@@ -399,12 +398,7 @@ export default function VideosDetails({
           {playlist.videos.map((video: VideoDetails) => (
             <div
               key={video.id}
-              onMouseDown={startLongClick}
-              onMouseMove={move}
-              onMouseUp={stopLongClick}
-              onTouchStart={startLongClick}
-              onTouchEnd={stopLongClick}
-              onTouchMove={move}
+              {...longClickHandlers}
               onClick={() => (isSelecting ? handleSelect(video.id) : null)}
             >
               <VideoItem
