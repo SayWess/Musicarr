@@ -51,7 +51,7 @@ services:
     image: nginx
     container_name: musicarr-nginx
     ports:
-      - "80:80" # Change the desired port here <your_port>:80
+      - "30200:80" # Change the desired port here <your_port>:80
     volumes:
       - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
     networks:
