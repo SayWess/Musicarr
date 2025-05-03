@@ -19,8 +19,7 @@ export default function Sidebar() {
 
   // Adjusts highlighting for playlist detail pages
   const isActive = (href: string) => {
-    if (href === "/videos") return pathname === "/playlists/0";
-    if (href === "/playlists") return pathname.startsWith("/playlists") && pathname !== "/playlists/0";
+    if (href === "/playlists") return pathname.startsWith("/playlists");
     return pathname === href;
   };
 
