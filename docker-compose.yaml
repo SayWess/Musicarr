@@ -27,7 +27,6 @@ services:
     restart: unless-stopped
 
   musicarr-backend:
-    privileged: true
     build:
       context: ./backend
       dockerfile: Dockerfile
@@ -50,10 +49,11 @@ services:
   nginx:
     image: nginx
     container_name: musicarr-nginx
+    build:
+      context: ./nginx
+      dockerfile: Dockerfile
     ports:
       - "30200:80" # Change the desired port here <your_port>:80
-    volumes:
-      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
     networks:
       - musicarr-network
     depends_on:
