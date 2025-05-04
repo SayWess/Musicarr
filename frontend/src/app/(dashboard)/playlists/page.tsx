@@ -11,7 +11,7 @@ export default async function PlaylistsPage() {
   const gridSize = cookieStore.get("playlists_grid_size")?.value || "false";
 
   const res = await axios.get(
-    `${endpointPlaylists}?sort_by=${sortBy}&order=${sortOrder}`
+    `${endpointPlaylists}/?sort_by=${sortBy}&order=${sortOrder}`
   );
 
   return (

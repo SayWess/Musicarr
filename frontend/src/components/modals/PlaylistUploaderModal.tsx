@@ -51,7 +51,7 @@ export const PlaylistUploaderModal = ({
       setLoadError(false);
 
       axios
-        .get(endpointUploaders)
+        .get(endpointUploaders + "/")
         .then((res) => setUploaders(res.data))
         .catch((err) => {
           setLoadError(true);
