@@ -9,7 +9,7 @@ const endpointVideos = endpointApi + "/videos";
 const endpointUploaders = endpointApi + "/uploaders";
 
 // WebSocket endpoints
-const endpointWebSocket = process.env.NEXT_PUBLIC_WS_URL || "ws://musicarr-backend/ws";
+const endpointWebSocket = process.env.NEXT_PUBLIC_WS_URL || "/ws";
 
 const endpointWebSocketPlaylists = endpointWebSocket + "/playlists";
 const endpointWebSocketVideos = endpointWebSocket + "/videos";
