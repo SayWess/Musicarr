@@ -19,6 +19,8 @@ COPY --from=builder /install /usr/local
 
 COPY . /app
 
+RUN mkdir -p /app/metadata/avatars
+
 RUN chmod +x /app/init-db.sh
 RUN chmod +x /app/entrypoint.sh
 ENTRYPOINT ["/app/entrypoint.sh"]
