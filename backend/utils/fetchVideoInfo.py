@@ -8,6 +8,8 @@ from database.database import SessionLocal
 from utils.download_uploader_avatar import download_uploader_avatar
 from utils.fetch_item_info import fetch_item_info
 
+from datetime import datetime as Datetime
+
 
 fetching_videos = {}
 
@@ -135,6 +137,7 @@ async def fetch_and_store_video_info(video_id, db: AsyncSession):
         )
         db.add(playlist_video)
 
+    playlist.last_published = Datetime.now().strftime("%Y%m%d")
 
     # Step 6: Commit all PlaylistVideo entries
     await db.commit()

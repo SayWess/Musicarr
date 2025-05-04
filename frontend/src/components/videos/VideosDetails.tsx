@@ -317,8 +317,7 @@ export default function VideosDetails({
           <div className="flex flex-col items-start max-w-[100%] lg:contents gap-2">
             <div className="lg:mt-2 flex flex-col gap-2">
               <div className="flex items-center gap-2">
-                <Calendar size={16} className="min-w-fit" /> Last video
-                published:{" "}
+                <Calendar size={16} className="min-w-fit" /> Last update:{" "}
                 <span>{formatDate(playlist.last_published) ?? "unknown"}</span>
               </div>
             </div>
