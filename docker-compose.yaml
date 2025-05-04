@@ -47,7 +47,7 @@ services:
       - musicarr-postgres
     restart: no
 
-  ngninx:
+  nginx:
     image: nginx
     container_name: musicarr-nginx
     ports:
