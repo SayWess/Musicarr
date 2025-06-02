@@ -12,7 +12,7 @@ import { SortVideos } from "@/components/SortItems";
 import { endpointPlaylists } from "@/constants/endpoints";
 import { VALID_SORT_FIELDS_PLAYLISTS, SortField, SortOrder } from "@/constants/sortFields";
 import { COOKIE_KEY_PLAYLISTS } from "@/constants/cookies_keys";
-import { ItemFloatingMenu } from "../ItemFloatingMenu";
+// import { ItemFloatingMenu } from "../ItemFloatingMenu";
 
 interface PlaylistsProps {
   initialPlaylists: Playlist[];
@@ -101,7 +101,7 @@ export default function Playlists({ initialPlaylists, initialSortBy, initialSort
         cookie_key={COOKIE_KEY_PLAYLISTS}
       />
 
-      <ItemFloatingMenu />
+      {/* <ItemFloatingMenu /> */}
 
       <motion.div
         layout
