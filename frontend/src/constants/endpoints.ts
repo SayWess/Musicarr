@@ -1,5 +1,5 @@
 // Base API root depending on environment
-const backendHost = process.env.NEXT_PUBLIC_API_URL || "https://musicarr-backend";
+const backendHost = process.env.NEXT_PUBLIC_API_URL || "http://musicarr-backend";
 const endpointRoot = typeof window === "undefined" ? backendHost : process.env.NEXT_PUBLIC_API_URL || "";
 
 // API endpoints
