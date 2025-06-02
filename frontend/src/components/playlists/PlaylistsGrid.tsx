@@ -12,6 +12,7 @@ import { SortVideos } from "@/components/SortItems";
 import { endpointPlaylists } from "@/constants/endpoints";
 import { VALID_SORT_FIELDS_PLAYLISTS, SortField, SortOrder } from "@/constants/sortFields";
 import { COOKIE_KEY_PLAYLISTS } from "@/constants/cookies_keys";
+import { ItemFloatingMenu } from "../ItemFloatingMenu";
 
 interface PlaylistsProps {
   initialPlaylists: Playlist[];
@@ -23,7 +24,6 @@ interface PlaylistsProps {
 export default function Playlists({ initialPlaylists, initialSortBy, initialSortOrder, initialIsGridSmall }: PlaylistsProps) {
   const [ sortBy, setSortBy ] = useState<SortField>(initialSortBy);
   const [ sortOrder, setSortOrder ] = useState<SortOrder>(initialSortOrder);
-  const SWR_endpoint = endpointPlaylists;
 
   console.log("Playlists", sortBy, sortOrder);
   const { playlists, isLoading, isError, toggleCheckEveryDay } = usePlaylists(
@@ -97,9 +97,11 @@ export default function Playlists({ initialPlaylists, initialSortBy, initialSort
         currentSortOrder={sortOrder}
         setSortOrder={setSortOrder}
         validSortFields={[...VALID_SORT_FIELDS_PLAYLISTS]}
-        SWR_endpoint={SWR_endpoint}
+        SWR_endpoint={`${endpointPlaylists}/`}
         cookie_key={COOKIE_KEY_PLAYLISTS}
       />
+
+      <ItemFloatingMenu />
 
       <motion.div
         layout
