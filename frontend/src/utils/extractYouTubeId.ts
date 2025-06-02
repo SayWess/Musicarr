@@ -13,3 +13,11 @@ export const extractYouTubeId = (
     return null;
   }
 };
+
+export function getItemUrl(itemUrl: string) {
+  if (itemUrl.length !== 11) {
+    return `https://www.youtube.com/playlist?list=${itemUrl}`;
+  } else {
+    return `https://www.youtube.com/watch?v=${itemUrl}`;
+  }
+}

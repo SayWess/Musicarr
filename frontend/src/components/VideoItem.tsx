@@ -8,6 +8,7 @@ import { formatDate } from "@/utils/formatDate";
 import { fetcher } from "@/utils/fetcher";
 import React from "react";
 import { CheckCircle2 } from "lucide-react";
+import { copyUrlToClipboard } from "@/utils/copyToClipboard";
 
 type VideoItemProps = {
   playlist_id: string;
@@ -42,9 +43,7 @@ export const VideoItem = ({
   const isDownloaded = download_status?.status === "DOWNLOADED";
   const downloading = download_status?.status === "DOWNLOADING";
   const isError = download_status?.status === "ERROR";
-
   
-
   return (
     <div
       className={`flex items-center bg-gray-900 text-gray-200 p-2 md:p-4 rounded-lg shadow-md transition-all duration-300
@@ -55,20 +54,19 @@ export const VideoItem = ({
       ${!downloading && isSelectable && isSelected ? "ring-2 ring-green-500/50 hover:ring-green-500/50" : ""}
       ${downloading && isSelectable ? "select-blocked" : ""}
       `}
-      
     >
       <Image
         src={video.thumbnail || "/video.jpeg"}
         alt={video.title}
         width={120}
         height={68}
-        className="rounded-md h-auto w-20 md:w-auto shadow-md aspect-video object-cover cursor-zoom-in transition-all duration-300 hover:shadow-xl hover:scale-[1.05]"
-        onClick={() => openThumbnailModal(video.thumbnail)}
+        className="rounded-md h-auto w-20 md:w-auto max-w-[130px] shadow-md aspect-video object-cover cursor-zoom-in transition-all duration-300 hover:shadow-xl hover:scale-[1.05]"
+        onClick={(e) => {openThumbnailModal(video.thumbnail); e.preventDefault(); e.stopPropagation();}}
         priority={true}
       />
 
       <div className="ml-4 flex-1">
-        <h3 className="text-xs md:text-lg font-semibold line-clamp-2">
+        <h3 className="text-xs md:text-lg font-semibold line-clamp-2 w-fit cursor-pointer" onClick={() => copyUrlToClipboard(video.id)}>
           {video.title}
         </h3>
 

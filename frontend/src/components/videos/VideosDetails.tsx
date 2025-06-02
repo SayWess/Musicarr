@@ -229,7 +229,6 @@ export default function VideosDetails({
     } catch (error) {
       errorToast("Failed to start downloading some selected videos");
       setSelectedVideos([]);
-      // console.error("Error downloading selected videos:", error);
     }
   };
 
@@ -252,7 +251,6 @@ export default function VideosDetails({
       } else {
         errorToast("Failed to delete some selected videos");
       }
-      // console.error("Error deleting selected videos:", error);
     }
   };
 

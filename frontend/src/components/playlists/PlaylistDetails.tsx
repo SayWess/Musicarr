@@ -37,6 +37,7 @@ import errorToast from "../toasts/errorToast";
 import infoToast from "../toasts/infoToast";
 import PlaylistUploader from "./PlaylistUploader";
 import { COOKIE_KEY_VIDEOS } from "@/constants/cookies_keys";
+import { copyUrlToClipboard } from "@/utils/copyToClipboard";
 
 interface PlaylistDetailsProps {
   id: string;
@@ -265,7 +266,7 @@ export default function PlaylistDetails({
 
         {/* Playlist Info */}
         <div className="container-playlist-info items-center lg:items-start gap-2">
-          <h1 className="break-all line-clamp-2 text-center text-xl md:text-2xl lg:text-left">
+          <h1 className="break-all line-clamp-2 text-center text-xl md:text-2xl lg:text-left cursor-pointer" onClick={() => copyUrlToClipboard(playlist.id)}>
             {playlist.title}
           </h1>
 

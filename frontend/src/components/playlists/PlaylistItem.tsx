@@ -193,18 +193,18 @@ export const PlaylistItem = ({
 
         {/* Missing Videos Indicator (Bottom-Left) */}
         <span
-          className={`absolute top-2 left-2 py-1 text-xs font-semibold rounded-md transition-all duration-300 ${
+          className={`absolute top-2 left-2 py-1 text-sm text-white font-semibold shadow-[0px_0px_4px_2px_#444444] rounded-md transition-all duration-300 ${
             !isLoading && data && data.total_videos === data.downloaded_videos
-              ? "bg-green-500 text-white"
-              : "bg-red-500 text-white"
+              ? "bg-green-500"
+              : "bg-red-500"
           }
-          ${isGridSmall ? "text-[10px] px-[0.4rem]" : "px-2"}
+          ${isGridSmall ? "text-[12px] px-[0.4rem]" : "px-2"}
           `}
         >
           {isLoading ? (
             <span className="animate-pulse"></span>
           ) : (
-            <span>
+            <span className={"drop-shadow-[0_1.2px_1.2px_rgba(0,0,0,1)]"}>
               {data.total_videos !== data.downloaded_videos
                 ? data.total_videos - data.downloaded_videos
                 : ""}

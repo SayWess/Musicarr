@@ -165,10 +165,10 @@ async def fetch_full_video(video_id: str, video_title: str = None):
             result = None
 
             # Remove video
-            result = await db.execute(
+            result_request = await db.execute(
                 select(Video).filter(Video.source_id == video_id)
             )
-            video = result.scalars().first()
+            video = result_request.scalars().first()
             if video:
                 await db.delete(video)
                 await db.commit()
