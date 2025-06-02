@@ -1,4 +1,4 @@
-FROM node:23-alpine3.20 AS base
+FROM node:23-alpine3.21 AS base
 
 # Install dependencies in order to build the app
 RUN apk add --no-cache g++ make py3-pip libc6-compat
