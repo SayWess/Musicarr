@@ -3,16 +3,16 @@
 import { PlaylistItem } from "@/components/playlists/PlaylistItem";
 import usePlaylists from "@/hooks/usePlaylists";
 import { Playlist } from "@/types/models";
-import AddItem from "@/components/AddItem";
+import AddItem from "@/components/floating-options/AddItem";
 import { useState } from "react";
 import { LayoutPanelTop, LayoutGrid } from "lucide-react";
 import clsx from "clsx";
 import { motion, AnimatePresence } from "framer-motion";
-import { SortVideos } from "@/components/SortItems";
+import { SortVideos } from "@/components/floating-options/SortItems";
+import { OptionsFloatingMenu } from "@/components/floating-options/OptionsFloatingMenu";
 import { endpointPlaylists } from "@/constants/endpoints";
 import { VALID_SORT_FIELDS_PLAYLISTS, SortField, SortOrder } from "@/constants/sortFields";
 import { COOKIE_KEY_PLAYLISTS } from "@/constants/cookies_keys";
-// import { ItemFloatingMenu } from "../ItemFloatingMenu";
 
 interface PlaylistsProps {
   initialPlaylists: Playlist[];
@@ -21,9 +21,10 @@ interface PlaylistsProps {
   initialIsGridSmall: boolean;
 }
 
-export default function Playlists({ initialPlaylists, initialSortBy, initialSortOrder, initialIsGridSmall }: PlaylistsProps) {
-  const [ sortBy, setSortBy ] = useState<SortField>(initialSortBy);
-  const [ sortOrder, setSortOrder ] = useState<SortOrder>(initialSortOrder);
+export default function Playlists(props: PlaylistsProps) {
+  const { initialPlaylists, initialSortBy, initialSortOrder, initialIsGridSmall } = props;
+  const [sortBy, setSortBy] = useState<SortField>(initialSortBy);
+  const [sortOrder, setSortOrder] = useState<SortOrder>(initialSortOrder);
 
   console.log("Playlists", sortBy, sortOrder);
   const { playlists, isLoading, isError, toggleCheckEveryDay } = usePlaylists(
@@ -38,12 +39,22 @@ export default function Playlists({ initialPlaylists, initialSortBy, initialSort
     document.cookie = `${COOKIE_KEY_PLAYLISTS}_grid_size=${size}; path=/; max-age=31536000; SameSite=Lax;`;
   };
 
+  const optionsFloatingMenuParams = {
+    SortVideosParams: {
+      currentSortBy: sortBy,
+      setSortBy,
+      currentSortOrder: sortOrder,
+      setSortOrder,
+      validSortFields: [...VALID_SORT_FIELDS_PLAYLISTS],
+      SWR_endpoint: `${endpointPlaylists}/`,
+      cookie_key: COOKIE_KEY_PLAYLISTS,
+    },
+  };
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-screen">
-        <p className="text-gray-400 text-lg animate-pulse">
-          Loading playlists...
-        </p>
+        <p className="text-gray-400 text-lg animate-pulse">Loading playlists...</p>
       </div>
     );
   }
@@ -51,9 +62,7 @@ export default function Playlists({ initialPlaylists, initialSortBy, initialSort
   if (isError) {
     return (
       <div className="flex items-center justify-center h-screen">
-        <p className="text-red-500 text-lg font-semibold">
-          Failed to load playlists. 😢
-        </p>
+        <p className="text-red-500 text-lg font-semibold">Failed to load playlists. 😢</p>
       </div>
     );
   }
@@ -67,10 +76,7 @@ export default function Playlists({ initialPlaylists, initialSortBy, initialSort
           className="items-center cursor-pointer pr-2 relative w-6 h-6"
           onClick={() => handleGridSizeChange(!isGridSmall)}
         >
-          <div
-            className="absolute inset-0 transition-opacity duration-300 ease-in-out transform"
-            key="grid"
-          >
+          <div className="absolute inset-0 transition-opacity duration-300 ease-in-out transform" key="grid">
             <LayoutGrid
               size={24}
               className={clsx(
@@ -89,19 +95,10 @@ export default function Playlists({ initialPlaylists, initialSortBy, initialSort
         </button>
       </div>
 
-      <AddItem />
-      
-      <SortVideos
-        currentSortBy={sortBy}
-        setSortBy={setSortBy}
-        currentSortOrder={sortOrder}
-        setSortOrder={setSortOrder}
-        validSortFields={[...VALID_SORT_FIELDS_PLAYLISTS]}
-        SWR_endpoint={`${endpointPlaylists}/`}
-        cookie_key={COOKIE_KEY_PLAYLISTS}
-      />
-
-      {/* <ItemFloatingMenu /> */}
+      <OptionsFloatingMenu>
+        <SortVideos {...optionsFloatingMenuParams.SortVideosParams} />
+        <AddItem />
+      </OptionsFloatingMenu>
 
       <motion.div
         layout

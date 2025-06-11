@@ -4,17 +4,9 @@ import "./videosDetails.css";
 import Image from "next/image";
 import useSWR, { mutate } from "swr";
 import { Calendar, Video, Film, Captions, FolderDown } from "lucide-react";
-import {
-  VideoDetails,
-  DownloadQuality,
-  PlaylistDetails as PlaylistDetailsInterface,
-} from "@/types/models";
+import { VideoDetails, DownloadQuality, PlaylistDetails as PlaylistDetailsInterface } from "@/types/models";
 import axios from "axios";
-import {
-  endpointPlaylists,
-  endpointVideos,
-  endpointWebSocketPlaylists,
-} from "@/constants/endpoints";
+import { endpointPlaylists, endpointVideos, endpointWebSocketPlaylists } from "@/constants/endpoints";
 import useDownloadProgress from "@/hooks/useDownloadProgress";
 import { VideoItem } from "@/components/VideoItem";
 import { useWebSocket } from "@/hooks/useWebSocket";
@@ -22,23 +14,18 @@ import { useState, useEffect } from "react";
 import VideosButton from "@/components/videos/Buttons";
 import NumberOfVideosDownloaded from "@/components/playlists/NumberOfVideosDownloaded";
 import { formatDate } from "@/utils/formatDate";
-import {
-  useThumbnailModal,
-  ThumbnailModal,
-} from "@/components/modals/ThumbnailModal";
-import { SortVideos } from "@/components/SortItems";
-import {
-  VALID_SORT_FIELDS_VIDEOS,
-  SortOrder,
-  SortField,
-} from "@/constants/sortFields";
+import { useThumbnailModal, ThumbnailModal } from "@/components/modals/ThumbnailModal";
+import { SortVideos } from "@/components/floating-options/SortItems";
+import { VALID_SORT_FIELDS_VIDEOS, SortOrder, SortField } from "@/constants/sortFields";
 import successToast from "../toasts/successToast";
 import errorToast from "../toasts/errorToast";
 import infoToast from "../toasts/infoToast";
 import { COOKIE_KEY_VIDEOS } from "@/constants/cookies_keys";
-import AddItem from "../AddItem";
+import AddItem from "../floating-options/AddItem";
 import SelectingBar from "./SelectingBar";
 import { useLongClickHandlers } from "@/hooks/useLongClick";
+import { OptionsFloatingMenu } from "../floating-options/OptionsFloatingMenu";
+import { SelectionModeButton } from "../floating-options/SelectionModeButton";
 
 interface PlaylistDetailsProps {
   id: string;
@@ -47,20 +34,13 @@ interface PlaylistDetailsProps {
   initialSortOrder: SortOrder;
 }
 
-export default function VideosDetails({
-  id,
-  initialPlaylist,
-  initialSortBy,
-  initialSortOrder,
-}: PlaylistDetailsProps) {
+export default function VideosDetails(props: PlaylistDetailsProps) {
+  const { id, initialPlaylist, initialSortBy, initialSortOrder } = props;
   const [currentSortBy, setSortBy] = useState<SortField>(initialSortBy);
-  const [currentSortOrder, setSortOrder] =
-    useState<SortOrder>(initialSortOrder);
+  const [currentSortOrder, setSortOrder] = useState<SortOrder>(initialSortOrder);
 
   const fetcher = (url: string) => {
-    return axios
-      .get(url + `?sort_by=${currentSortBy}&order=${currentSortOrder}`)
-      .then((res) => res.data);
+    return axios.get(url + `?sort_by=${currentSortBy}&order=${currentSortOrder}`).then((res) => res.data);
   };
 
   const {
@@ -86,9 +66,7 @@ export default function VideosDetails({
   const [selectedVideos, setSelectedVideos] = useState<string[]>([]);
 
   const handleSelect = async (videoId: string) => {
-    const status = await fetch(
-      `${endpointPlaylists}/${playlist.id}/videos/${videoId}/download_status`
-    )
+    const status = await fetch(`${endpointPlaylists}/${playlist.id}/videos/${videoId}/download_status`)
       .then((res) => res.json())
       .then((data) => data.status);
 
@@ -98,9 +76,7 @@ export default function VideosDetails({
     }
 
     setSelectedVideos((prev) =>
-      prev.includes(videoId)
-        ? prev.filter((id) => id !== videoId)
-        : [...prev, videoId]
+      prev.includes(videoId) ? prev.filter((id) => id !== videoId) : [...prev, videoId]
     );
   };
 
@@ -114,11 +90,11 @@ export default function VideosDetails({
 
   const longClickHandlers = useLongClickHandlers(() => {
     if (isDownloading) {
-      errorToast("\"Select mode\" not available : Playlist is downloading.");
+      errorToast('"Select mode" not available : Playlist is downloading.');
       return;
     }
     setIsSelecting(true);
-  })
+  });
 
   const webSocketKey = `playlist-details-${id}`;
   useWebSocket(
@@ -219,9 +195,7 @@ export default function VideosDetails({
 
     try {
       await Promise.all(
-        selectedVideos.map((videoId) =>
-          axios.post(`${endpointPlaylists}/${id}/videos/${videoId}/download`)
-        )
+        selectedVideos.map((videoId) => axios.post(`${endpointPlaylists}/${id}/videos/${videoId}/download`))
       );
       infoToast("Selected videos download started.");
       setSelectedVideos([]);
@@ -236,11 +210,7 @@ export default function VideosDetails({
     if (isDownloading) return;
 
     try {
-      await Promise.all(
-        selectedVideos.map((videoId) =>
-          axios.delete(`${endpointVideos}/${videoId}`)
-        )
-      );
+      await Promise.all(selectedVideos.map((videoId) => axios.delete(`${endpointVideos}/${videoId}`)));
       setSelectedVideos([]);
       setIsSelecting(false);
       successToast("Selected videos deleted successfully.");
@@ -257,9 +227,7 @@ export default function VideosDetails({
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-screen">
-        <p className="text-gray-400 text-lg animate-pulse">
-          Loading playlist...
-        </p>
+        <p className="text-gray-400 text-lg animate-pulse">Loading playlist...</p>
       </div>
     );
   }
@@ -267,21 +235,32 @@ export default function VideosDetails({
   if (error || !playlist) {
     return (
       <div className="flex items-center justify-center h-screen">
-        <p className="text-red-500 text-lg font-semibold">
-          Failed to load playlist. 😢
-        </p>
+        <p className="text-red-500 text-lg font-semibold">Failed to load playlist. 😢</p>
       </div>
     );
   }
 
   const qualityKey = Object.keys(DownloadQuality).find(
-    (key) =>
-      DownloadQuality[key as keyof typeof DownloadQuality] ==
-      playlist.default_quality
+    (key) => DownloadQuality[key as keyof typeof DownloadQuality] == playlist.default_quality
   );
 
+  const optionsFloatingMenuParams = {
+    SortVideosParams: {
+      currentSortBy,
+      setSortBy,
+      currentSortOrder,
+      setSortOrder,
+      validSortFields: [...VALID_SORT_FIELDS_VIDEOS],
+      SWR_endpoint: `${endpointPlaylists}/${id}/details`,
+      cookie_key: COOKIE_KEY_VIDEOS,
+    },
+    SelectionModeParams: {
+      setIsSelecting,
+    },
+  };
+
   return (
-    <div className="p-3 md:p-12 pb-24">
+    <div className="p-3 md:p-5 pb-24">
       {/* Header */}
       <div className="bg-gray-900 text-gray-200 p-4 md:p-6 rounded-lg [&_*_span]:font-medium shadow-md flex flex-col lg:flex-row items-center gap-6">
         {/* [&_*_span] selection tous les span enfants */}
@@ -293,9 +272,7 @@ export default function VideosDetails({
           priority={true}
           width={200}
           height={100}
-          onClick={() =>
-            openThumbnailModal(playlist.thumbnail || "/video.jpeg")
-          }
+          onClick={() => openThumbnailModal(playlist.thumbnail || "/video.jpeg")}
           className="rounded-lg shadow-lg w-full flex-1 cursor-zoom-in max-w-[400px] min-w-[200px] h-auto aspect-video object-cover
           transition-all duration-300 hover:shadow-xl hover:scale-[1.03]"
         />
@@ -328,27 +305,17 @@ export default function VideosDetails({
               </div>
               <div className="flex items-center gap-2">
                 <Video size={16} className="min-w-fit" />
-                Quality:{" "}
-                <span>
-                  {(qualityKey || "None").replace("q_", "").toUpperCase()}
-                </span>
+                Quality: <span>{(qualityKey || "None").replace("q_", "").toUpperCase()}</span>
               </div>
               <div className="flex items-center gap-2">
                 <Captions size={16} className="min-w-fit" />
-                Subtitles:{" "}
-                <span>{playlist.default_subtitles ? "Yes" : "No"}</span>
+                Subtitles: <span>{playlist.default_subtitles ? "Yes" : "No"}</span>
               </div>
             </div>
 
-            <div
-              className="flex items-center gap-2"
-              style={{ maxWidth: "inherit" }}
-            >
+            <div className="flex items-center gap-2" style={{ maxWidth: "inherit" }}>
               <FolderDown size={16} className="min-w-fit" />
-              Folder:{" "}
-              <span className="bg-gray-700 px-2 truncate rounded">
-                {playlist.folder}
-              </span>
+              Folder: <span className="bg-gray-700 px-2 truncate rounded">{playlist.folder}</span>
             </div>
 
             <NumberOfVideosDownloaded playlist_id={playlist.id} />
@@ -363,20 +330,15 @@ export default function VideosDetails({
         />
       </div>
 
-      {!isSelecting && (
-        <>
-          <SortVideos
-            currentSortBy={currentSortBy}
-            setSortBy={setSortBy}
-            currentSortOrder={currentSortOrder}
-            setSortOrder={setSortOrder}
-            validSortFields={[...VALID_SORT_FIELDS_VIDEOS]}
-            SWR_endpoint={`${endpointPlaylists}/${id}/details`}
-            cookie_key={COOKIE_KEY_VIDEOS}
-          />
-          <AddItem />
-        </>
-      )}
+      <OptionsFloatingMenu>
+        {!isSelecting && (
+          <>
+            <SortVideos {...optionsFloatingMenuParams.SortVideosParams} />
+            <AddItem />
+            <SelectionModeButton {...optionsFloatingMenuParams.SelectionModeParams} />
+          </>
+        )}
+      </OptionsFloatingMenu>
 
       {isSelecting && (
         <SelectingBar
