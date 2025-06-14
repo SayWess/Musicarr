@@ -1,4 +1,4 @@
-from database.models import Playlist, PlaylistVideo, DownloadState, Video # Import your models
+from database.models import Playlist, PlaylistVideo, DownloadState # Import your models
 from sqlalchemy.ext.asyncio import AsyncSession
 from utils.download_playlist_video import start_download_video
 

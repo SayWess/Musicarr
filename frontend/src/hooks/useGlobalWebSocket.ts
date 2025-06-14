@@ -1,5 +1,4 @@
 import { useWebSocket } from "./useWebSocket";
-import { toast } from "sonner";
 import { mutate } from "swr";
 import { endpointPlaylists, endpointWebSocketPlaylists, endpointWebSocketUploaders } from "@/constants/endpoints";
 import infoToast from "@/components/toasts/infoToast";
@@ -8,12 +7,12 @@ import successToast from "@/components/toasts/successToast";
 
 export function useGlobalWebSocket() {
   useWebSocket(endpointWebSocketPlaylists, (data) => {
-    if (data.fetch_success) {
+    if (data.fetch_success === true) {
       mutate(`${endpointPlaylists}`);
       mutate(`${endpointPlaylists}/${data.playlist_id}/details`); // Maybe not needed anymore
-      successToast(`Playlist "${data.playlist_title}" refreshed successfully!`);
+      successToast(data.message);
     } else if (data.fetch_success === false) {
-      errorToast(`Failed to refresh playlist "${data.playlist_title || data.playlist_id}".`)
+      errorToast(data.message)
     }
   }, "global-playlist-updates");
 

@@ -9,8 +9,8 @@ const nextConfig: NextConfig = {
       },
       {
         protocol: "http",
-        hostname: "192.168.146.221"
-      }
+        hostname: process.env.NEXT_DEVELOPMENT_HOST || "musicarr-backend",
+      },
     ], // Add domains for youtube images
   },
   // reactStrictMode: false // Uncomment this line to disable React's strict mode and prevent double rendering, but not recommended in development
@@ -21,9 +21,10 @@ const nextConfig: NextConfig = {
   },
 
   allowedDevOrigins: [
-    'local-origin.dev',
-    '*.local-origin.dev',
-  ]
+    process.env.NEXT_DEVELOPMENT_HOST || 'localhost',
+  ],
+
+  output: 'standalone',
 
 };
 

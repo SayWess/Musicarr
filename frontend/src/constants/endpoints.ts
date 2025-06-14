@@ -1,18 +1,32 @@
-const endpointRoot = "http://192.168.146.221:8000"; // Change for the ip of the server (pc or nas)
-// const endpointRoot = "http://localhost:8000"; // Change for the ip of the server (pc or nas) if you are using localhost
+// Base API root depending on environment
+const backendHost = process.env.NEXT_PUBLIC_API_URL || "http://musicarr-backend";
+const endpointRoot = typeof window === "undefined" ? backendHost : process.env.NEXT_PUBLIC_API_URL || "";
+
+// API endpoints
 const endpointApi = endpointRoot + "/api";
 const endpointPlaylists = endpointApi + "/playlists";
 const endpointVideos = endpointApi + "/videos";
-const endpointWebSocket = "ws://192.168.146.221:8000/ws";
-// const endpointWebSocket = "ws://localhost:8000/ws"; // Change for the ip of the server (pc or nas) if you are using localhost
+const endpointUploaders = endpointApi + "/uploaders";
+
+// WebSocket endpoints
+const endpointWebSocket = process.env.NEXT_PUBLIC_WS_URL || "/ws";
+
 const endpointWebSocketPlaylists = endpointWebSocket + "/playlists";
 const endpointWebSocketVideos = endpointWebSocket + "/videos";
-
-// Enpoints for uploader
-const endpointUploaders = endpointApi + "/uploaders";
-const endpointUploadersAvatar = endpointRoot + "/metadata/avatars";
 const endpointWebSocketUploaders = endpointWebSocket + "/uploaders";
 
-export {endpointApi, endpointPlaylists, endpointVideos, endpointWebSocket, endpointWebSocketPlaylists, endpointWebSocketVideos,
-    endpointUploadersAvatar, endpointUploaders, endpointWebSocketUploaders
- };
+// Static metadata
+const endpointUploadersAvatar = backendHost + "/metadata/avatars";
+
+// Export all endpoints
+export {
+  endpointApi,
+  endpointPlaylists,
+  endpointVideos,
+  endpointUploaders,
+  endpointUploadersAvatar,
+  endpointWebSocket,
+  endpointWebSocketPlaylists,
+  endpointWebSocketVideos,
+  endpointWebSocketUploaders,
+};

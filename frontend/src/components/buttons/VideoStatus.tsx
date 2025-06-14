@@ -1,4 +1,4 @@
-import { CheckCircle, Download, Loader2, X, Check } from "lucide-react";
+import { CheckCircle, Download, Loader2, X } from "lucide-react";
 import { VideoDetails } from "@/types/models";
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";

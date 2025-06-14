@@ -50,6 +50,7 @@ async def get_playlists(
             missing_count,
         )
         .outerjoin(Playlist.videos)
+        .where(Playlist.source_id != "0")
         .group_by(Playlist.id)
     )
 
@@ -213,7 +214,18 @@ async def get_playlist_details(
     playlist = result.scalars().first()
     
     if not playlist:
-        raise HTTPException(status_code=404, detail="Playlist not found")
+        if playlist_id == "0":
+            # Create a new playlist instance
+            playlist = Playlist(
+                source_id=playlist_id,
+                title="My videos",
+            )
+
+            # Add the new playlist to the database
+            db.add(playlist)
+            await db.commit()
+        else :
+            raise HTTPException(status_code=404, detail="Playlist not found")
     
     # Mapping of valid sort fields
     sort_column_map = {
@@ -369,6 +381,7 @@ async def get_playlist_download_status(playlist_id: str):
         return {"message": "Playlist is not being downloaded", "is_downloading": False}
 
 from utils.download_video import download_video, downloading_videos
+from utils.fetchVideoInfo import fetching_videos
 @router.post("/{playlist_id}/videos/{video_id}/download")
 async def start_video_download(playlist_id: str, video_id: str, db: AsyncSession = Depends(get_db)):
     """
@@ -395,6 +408,9 @@ async def start_video_download(playlist_id: str, video_id: str, db: AsyncSession
     
     if (playlist_video.playlist_id, playlist_video.video_id) in downloading_videos:
         raise HTTPException(status_code=400, detail="Video is already being downloaded")
+
+    if video_id in fetching_videos:
+        raise HTTPException(status_code=400, detail="Video is being fetched")
 
     # Start the download process for the specific video
     asyncio.create_task(download_video(playlist_video, playlist, video))

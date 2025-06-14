@@ -9,7 +9,7 @@ const usePlaylists = (initialPlaylist: Playlist[], sortBy: SortField, sortOrder:
 
   const fetcher = (url: string) => {
     return axios
-      .get(url + `?sort_by=${sortBy}&order=${sortOrder}`)
+      .get(url + `/?sort_by=${sortBy}&order=${sortOrder}`)
       .then((res) => res.data);
   };
 

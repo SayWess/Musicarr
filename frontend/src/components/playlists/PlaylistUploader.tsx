@@ -8,7 +8,7 @@ interface PlaylistUploaderProps {
     uploader: Uploader;
     id: string;
   };
-  isRefreshing: boolean;
+  isRefreshing?: boolean;
 }
 
 export default function PlaylistUploader({

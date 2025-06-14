@@ -1,18 +1,17 @@
 "use client";
 
-import "./playlistDetails.css";
+import "./videosDetails.css";
 import Image from "next/image";
 import useSWR, { mutate } from "swr";
 import { Calendar, Video, Film, Captions, FolderDown } from "lucide-react";
 import { VideoDetails, DownloadQuality, PlaylistDetails as PlaylistDetailsInterface } from "@/types/models";
 import axios from "axios";
-import { endpointPlaylists, endpointWebSocketPlaylists } from "@/constants/endpoints";
+import { endpointPlaylists, endpointVideos, endpointWebSocketPlaylists } from "@/constants/endpoints";
 import useDownloadProgress from "@/hooks/useDownloadProgress";
 import { VideoItem } from "@/components/VideoItem";
 import { useWebSocket } from "@/hooks/useWebSocket";
-import { useState } from "react";
-import { useEffect } from "react";
-import InteractiveButtons from "@/components/playlists/InteractiveButtons";
+import { useState, useEffect } from "react";
+import VideosButton from "@/components/videos/Buttons";
 import NumberOfVideosDownloaded from "@/components/playlists/NumberOfVideosDownloaded";
 import { formatDate } from "@/utils/formatDate";
 import { useThumbnailModal, ThumbnailModal } from "@/components/modals/ThumbnailModal";
@@ -21,9 +20,12 @@ import { VALID_SORT_FIELDS_VIDEOS, SortOrder, SortField } from "@/constants/sort
 import successToast from "../toasts/successToast";
 import errorToast from "../toasts/errorToast";
 import infoToast from "../toasts/infoToast";
-import PlaylistUploader from "./PlaylistUploader";
 import { COOKIE_KEY_VIDEOS } from "@/constants/cookies_keys";
-import { copyUrlToClipboard } from "@/utils/copyToClipboard";
+import AddItem from "../floating-options/AddItem";
+import SelectingBar from "./SelectingBar";
+import { useLongClickHandlers } from "@/hooks/useLongClick";
+import { OptionsFloatingMenu } from "../floating-options/OptionsFloatingMenu";
+import { SelectionModeButton } from "../floating-options/SelectionModeButton";
 
 interface PlaylistDetailsProps {
   id: string;
@@ -32,9 +34,8 @@ interface PlaylistDetailsProps {
   initialSortOrder: SortOrder;
 }
 
-export default function PlaylistDetails(props: PlaylistDetailsProps) {
+export default function VideosDetails(props: PlaylistDetailsProps) {
   const { id, initialPlaylist, initialSortBy, initialSortOrder } = props;
-  // Local state to manage sorting
   const [currentSortBy, setSortBy] = useState<SortField>(initialSortBy);
   const [currentSortOrder, setSortOrder] = useState<SortOrder>(initialSortOrder);
 
@@ -50,7 +51,6 @@ export default function PlaylistDetails(props: PlaylistDetailsProps) {
     fallbackData: initialPlaylist,
   });
 
-  const [isRefreshing, setIsRefreshing] = useState(false);
   const [isDownloading, setIsDownloading] = useState(false);
 
   const {
@@ -62,19 +62,45 @@ export default function PlaylistDetails(props: PlaylistDetailsProps) {
 
   const { getProgress, getDownloadStage } = useDownloadProgress(String(id));
 
+  const [isSelecting, setIsSelecting] = useState(false);
+  const [selectedVideos, setSelectedVideos] = useState<string[]>([]);
+
+  const handleSelect = async (videoId: string) => {
+    const status = await fetch(`${endpointPlaylists}/${playlist.id}/videos/${videoId}/download_status`)
+      .then((res) => res.json())
+      .then((data) => data.status);
+
+    if (status === "DOWNLOADING") {
+      errorToast("Video is downloading.");
+      return;
+    }
+
+    setSelectedVideos((prev) =>
+      prev.includes(videoId) ? prev.filter((id) => id !== videoId) : [...prev, videoId]
+    );
+  };
+
+  const handleSelectAll = () => {
+    if (selectedVideos.length === playlist.videos.length) {
+      setSelectedVideos([]);
+    } else {
+      setSelectedVideos(playlist.videos.map((video: VideoDetails) => video.id));
+    }
+  };
+
+  const longClickHandlers = useLongClickHandlers(() => {
+    if (isDownloading) {
+      errorToast('"Select mode" not available : Playlist is downloading.');
+      return;
+    }
+    setIsSelecting(true);
+  });
+
   const webSocketKey = `playlist-details-${id}`;
   useWebSocket(
     `${endpointWebSocketPlaylists}`,
     (data) => {
       if (data.playlist_id !== id) return;
-
-      if (data.fetch_success === true) {
-        mutate(`${endpointPlaylists}/${id}/number_of_videos_downloaded`);
-        mutate(`${endpointPlaylists}/${id}/details`);
-        setIsRefreshing(false);
-      } else if (data.fetch_success === false) {
-        setIsRefreshing(false);
-      }
 
       if (data.options_updated === true) {
         successToast("Playlist options updated successfully.");
@@ -97,8 +123,6 @@ export default function PlaylistDetails(props: PlaylistDetailsProps) {
             );
           }
         }
-
-        console.log("Playlist downloaded successfully.");
       } else if (data.download_success === false) {
         setIsDownloading(false);
         errorToast("Playlist download failed.");
@@ -111,19 +135,6 @@ export default function PlaylistDetails(props: PlaylistDetailsProps) {
     if (!id) return;
 
     let isMounted = true; // Prevents running twice due to re-renders
-
-    fetch(`${endpointPlaylists}/${id}/is_fetching`)
-      .then((res) => res.json())
-      .then((data) => {
-        // console.log("Playlist refresh status:", data);
-        if (data.is_fetching && isMounted) {
-          infoToast(`Playlist is being refreshed.`);
-          setIsRefreshing(true);
-        }
-      })
-      .catch((error) => {
-        console.error("Error checking playlist refresh status:", error);
-      });
 
     fetch(`${endpointPlaylists}/${id}/download_status`)
       .then((res) => res.json())
@@ -142,26 +153,10 @@ export default function PlaylistDetails(props: PlaylistDetailsProps) {
     };
   }, [id]);
 
-  const handleRefresh = async () => {
-    if (isRefreshing) return;
-    setIsRefreshing(true);
-
-    try {
-      const response = await fetch(`${endpointPlaylists}/${id}/refresh`, {
-        method: "POST",
-      });
-
-      if (!response.ok) throw new Error("Failed to refresh playlist");
-    } catch (error) {
-      errorToast("Failed to refresh playlist");
-      console.error("Error refreshing playlist:", error);
-      setIsRefreshing(false);
-    }
-  };
-
   const handleDownload = async (redownloadAll: boolean) => {
     if (isDownloading) return;
     setIsDownloading(true);
+    setIsSelecting(false);
 
     try {
       const response = await fetch(`${endpointPlaylists}/${id}/download`, {
@@ -174,9 +169,58 @@ export default function PlaylistDetails(props: PlaylistDetailsProps) {
 
       if (!response.ok) throw new Error("Failed to download playlist");
     } catch (error) {
-      errorToast("Failed to start the download of the playlist");
-      console.error("Error downloading playlist:", error);
+      errorToast("Failed to start the download of the videos");
+      // console.error("Error downloading playlist:", error);
       setIsDownloading(false);
+    }
+  };
+
+  const handleVideoDownload = async (videoId: string) => {
+    if (isDownloading) return;
+    try {
+      await axios.post(`${endpointPlaylists}/${id}/videos/${videoId}/download`);
+      infoToast("Video download started.");
+    } catch (error: any) {
+      if (error.response?.data?.detail) {
+        errorToast(error.response.data.detail);
+      } else {
+        errorToast("Failed to delete some selected videos");
+      }
+      // console.error("Download failed:", error);
+    }
+  };
+
+  const handleDownloadSelected = async () => {
+    if (isDownloading) return;
+
+    try {
+      await Promise.all(
+        selectedVideos.map((videoId) => axios.post(`${endpointPlaylists}/${id}/videos/${videoId}/download`))
+      );
+      infoToast("Selected videos download started.");
+      setSelectedVideos([]);
+      setIsSelecting(false);
+    } catch (error) {
+      errorToast("Failed to start downloading some selected videos");
+      setSelectedVideos([]);
+    }
+  };
+
+  const handleDeleteSelected = async () => {
+    if (isDownloading) return;
+
+    try {
+      await Promise.all(selectedVideos.map((videoId) => axios.delete(`${endpointVideos}/${videoId}`)));
+      setSelectedVideos([]);
+      setIsSelecting(false);
+      successToast("Selected videos deleted successfully.");
+      mutate(`${endpointPlaylists}/${id}/details`);
+    } catch (error: any) {
+      if (error.response?.data?.detail) {
+        errorToast(error.response.data.detail);
+      } else {
+        errorToast("Failed to delete some selected videos");
+      }
     }
   };
 
@@ -196,35 +240,39 @@ export default function PlaylistDetails(props: PlaylistDetailsProps) {
     );
   }
 
-  const handleVideoDownload = async (videoId: string) => {
-    if (isDownloading) return;
-    try {
-      await axios.post(`${endpointPlaylists}/${id}/videos/${videoId}/download`);
-      infoToast("Video download started.");
-    } catch (error) {
-      console.error("Download failed:", error);
-      errorToast("Failed to start downloading video");
-    }
-  };
-
   const qualityKey = Object.keys(DownloadQuality).find(
     (key) => DownloadQuality[key as keyof typeof DownloadQuality] == playlist.default_quality
   );
 
+  const optionsFloatingMenuParams = {
+    SortVideosParams: {
+      currentSortBy,
+      setSortBy,
+      currentSortOrder,
+      setSortOrder,
+      validSortFields: [...VALID_SORT_FIELDS_VIDEOS],
+      SWR_endpoint: `${endpointPlaylists}/${id}/details`,
+      cookie_key: COOKIE_KEY_VIDEOS,
+    },
+    SelectionModeParams: {
+      setIsSelecting,
+    },
+  };
+
   return (
-    <div className="p-3 md:p-12 pb-24">
-      {/* Playlist Header */}
+    <div className="p-3 md:p-5 pb-24">
+      {/* Header */}
       <div className="bg-gray-900 text-gray-200 p-4 md:p-6 rounded-lg [&_*_span]:font-medium shadow-md flex flex-col lg:flex-row items-center gap-6">
         {/* [&_*_span] selection tous les span enfants */}
 
-        {/* Playlist Thumbnail */}
+        {/* Thumbnail */}
         <Image
-          src={playlist.thumbnail || "/404_page-not-found.webp"}
+          src={playlist.thumbnail || "/video.jpeg"}
           alt={playlist.title}
           priority={true}
           width={200}
           height={100}
-          onClick={() => openThumbnailModal(playlist.thumbnail || "/404_page-not-found.webp")}
+          onClick={() => openThumbnailModal(playlist.thumbnail || "/video.jpeg")}
           className="rounded-lg shadow-lg w-full flex-1 cursor-zoom-in max-w-[400px] min-w-[200px] h-auto aspect-video object-cover
           transition-all duration-300 hover:shadow-xl hover:scale-[1.03]"
         />
@@ -235,30 +283,22 @@ export default function PlaylistDetails(props: PlaylistDetailsProps) {
           closeModal={closeThumbnailModal}
         />
 
-        {/* Playlist Info */}
+        {/* Info */}
         <div className="container-playlist-info items-center lg:items-start gap-2">
-          <h1
-            className="break-all line-clamp-2 text-center text-xl md:text-2xl lg:text-left cursor-pointer"
-            onClick={() => copyUrlToClipboard(playlist.id)}
-          >
+          <h1 className="break-all line-clamp-2 text-center text-xl md:text-2xl lg:text-left">
             {playlist.title}
           </h1>
 
           <div className="flex flex-col items-start max-w-[100%] lg:contents gap-2">
             <div className="lg:mt-2 flex flex-col gap-2">
-              {playlist.id !== "0" && <PlaylistUploader playlist={playlist} isRefreshing={isRefreshing} />}
               <div className="flex items-center gap-2">
-                <Calendar size={16} className="min-w-fit" /> Last video published:{" "}
+                <Calendar size={16} className="min-w-fit" /> Last update:{" "}
                 <span>{formatDate(playlist.last_published) ?? "unknown"}</span>
               </div>
             </div>
 
-            {/* Playlist Settings */}
+            {/* Settings */}
             <div className="hidden lg:grid grid-cols-2 gap-x-6 gap-y-2 max-w-80 min-w-fit ">
-              <div className="flex items-center gap-2">
-                <Calendar size={16} className="min-w-fit" />
-                Check: <span>{playlist.check_every_day ? "Every day" : "Never"}</span>
-              </div>
               <div className="flex items-center gap-2">
                 <Film size={16} className="min-w-fit" />
                 Format: <span>{playlist.default_format}</span>
@@ -282,39 +322,55 @@ export default function PlaylistDetails(props: PlaylistDetailsProps) {
           </div>
         </div>
 
-        <InteractiveButtons
+        <VideosButton
           id={id!.toString()}
           playlist={playlist}
-          isRefreshing={isRefreshing}
-          onRefresh={handleRefresh}
           isDownloading={isDownloading}
           onDownload={handleDownload}
         />
       </div>
 
-      <SortVideos
-        currentSortBy={currentSortBy}
-        setSortBy={setSortBy}
-        currentSortOrder={currentSortOrder}
-        setSortOrder={setSortOrder}
-        validSortFields={[...VALID_SORT_FIELDS_VIDEOS]}
-        SWR_endpoint={`${endpointPlaylists}/${id}/details`}
-        cookie_key={COOKIE_KEY_VIDEOS}
-      />
+      <OptionsFloatingMenu>
+        {!isSelecting && (
+          <>
+            <SortVideos {...optionsFloatingMenuParams.SortVideosParams} />
+            <AddItem />
+            <SelectionModeButton {...optionsFloatingMenuParams.SelectionModeParams} />
+          </>
+        )}
+      </OptionsFloatingMenu>
+
+      {isSelecting && (
+        <SelectingBar
+          playlist={playlist}
+          setIsSelecting={() => setIsSelecting(!isSelecting)}
+          selectedVideos={selectedVideos}
+          handleSelectAll={handleSelectAll}
+          handleDownloadSelected={handleDownloadSelected}
+          handleDeleteSelected={handleDeleteSelected}
+        />
+      )}
 
       {/* Video List */}
-      <div className="mt-6">
+      <div className="mt-6 mb-6">
         <div className="space-y-2 lg:space-y-4">
           {playlist.videos.map((video: VideoDetails) => (
-            <VideoItem
+            <div
               key={video.id}
-              playlist_id={playlist.id}
-              video={video}
-              progress={getProgress(video.id)}
-              download_stage={getDownloadStage(video.id)}
-              onDownload={handleVideoDownload}
-              openThumbnailModal={openThumbnailModal}
-            />
+              {...longClickHandlers}
+              onClick={() => (isSelecting ? handleSelect(video.id) : null)}
+            >
+              <VideoItem
+                playlist_id={playlist.id}
+                video={video}
+                progress={getProgress(video.id)}
+                download_stage={getDownloadStage(video.id)}
+                onDownload={handleVideoDownload}
+                openThumbnailModal={openThumbnailModal}
+                isSelected={selectedVideos.includes(video.id)}
+                isSelectable={isSelecting}
+              />
+            </div>
           ))}
         </div>
       </div>
