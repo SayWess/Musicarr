@@ -1,14 +1,9 @@
 from fastapi import APIRouter, Depends, HTTPException, Query
-from sqlalchemy.orm import selectinload
 from database.database import get_db
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, func
-from database.models import Playlist, PlaylistVideo, DownloadState, Video, Uploader
-from fastapi.responses import FileResponse
+from sqlalchemy import select
+from database.models import Uploader
 import asyncio
-from websocket_manager import ws_manager
-from pydantic import BaseModel
-
 
 router = APIRouter()
 

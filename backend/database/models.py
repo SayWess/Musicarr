@@ -1,4 +1,4 @@
-from sqlalchemy import Column, String, Boolean, ForeignKey, Enum, DateTime, func
+from sqlalchemy import Column, String, Boolean, ForeignKey, Enum, DateTime, UniqueConstraint, func
 from sqlalchemy.orm import relationship, declared_attr
 from sqlalchemy.dialects.postgresql import UUID
 import uuid
@@ -110,3 +110,15 @@ class PlaylistVideo(Base):
 
     playlist = relationship("Playlist", back_populates="videos", passive_deletes=True)
     video = relationship("Video", back_populates="playlists")
+
+# RootFolder Model for Download Folders
+class RootFolder(Base):
+    __tablename__ = "root_folders"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    path = Column(String, unique=True, nullable=False)  # Root path for downloads
+    is_default = Column(Boolean, default=False)  # Whether this is the default path
+
+    @declared_attr
+    def __table_args__(cls):
+        return (UniqueConstraint('path', name='uq_root_folders'),)
