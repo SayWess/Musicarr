@@ -12,7 +12,7 @@ fastapi==0.115.12
 fastapi-cli==0.0.7
 greenlet==3.1.1
 h11==0.16.0
-httpcore==1.0.7
+httpcore==1.0.9
 httptools==0.6.4
 httpx==0.28.1
 idna==3.10
@@ -39,7 +39,7 @@ SQLAlchemy==2.0.40
 starlette==0.46.1
 typer==0.15.2
 typing_extensions==4.13.0
-urllib3==2.3.0
+urllib3==2.5.0
 uvicorn==0.34.0
 uvloop==0.21.0
 watchfiles==1.0.4
