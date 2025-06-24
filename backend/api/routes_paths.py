@@ -4,15 +4,14 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
-from database.models import RootFolder  # make sure this import is correct
+from database.models import RootFolder
 from database.database import get_db  # your FastAPI DB session dependency
 import os
 from utils.sanitize import is_valid_folder_name, is_valid_folder_path
+from utils.constants import MNT_PATH
+
 
 router = APIRouter()
-
-DEVELOPMENT = os.getenv("DEVELOPMENT", "false").lower() == "true"
-MNT_PATH = "/Media" if not DEVELOPMENT else "Media"
 
 # Schemas
 

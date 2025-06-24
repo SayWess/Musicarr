@@ -1,4 +1,4 @@
-from database.models import Playlist, PlaylistVideo, DownloadState # Import your models
+from database.models import Playlist, PlaylistVideo, DownloadState, RootFolder # Import your models
 from sqlalchemy.ext.asyncio import AsyncSession
 from utils.download_playlist_video import start_download_video
 
@@ -9,6 +9,9 @@ from sqlalchemy.orm import selectinload
 
 
 downloading = {}
+
+TEXT_NO_ROOT_FOLDER = "No root folder found"
+TEXT_NO_VIDEO_TO_DOWNLOAD = "No video to download"
 
 
 async def start_download_playlist(playlist_id: str, db: AsyncSession, redownloadAll: bool = False):
@@ -27,7 +30,8 @@ async def start_download_playlist(playlist_id: str, db: AsyncSession, redownload
         result = await db.execute(
             select(Playlist)
             .options(
-                selectinload(Playlist.videos).selectinload(PlaylistVideo.video) 
+                selectinload(Playlist.videos).selectinload(PlaylistVideo.video),
+                selectinload(Playlist.uploader)
             )
             .where(Playlist.id == playlist_id)
         )
@@ -37,7 +41,8 @@ async def start_download_playlist(playlist_id: str, db: AsyncSession, redownload
         result = await db.execute(
             select(Playlist)
             .options(
-                selectinload(Playlist.videos).selectinload(PlaylistVideo.video) 
+                selectinload(Playlist.videos).selectinload(PlaylistVideo.video),
+                selectinload(Playlist.uploader)
             )
             .where(Playlist.id == playlist_id)
             .where(Playlist.videos.any(PlaylistVideo.state.in_([DownloadState.IDLE, DownloadState.ERROR])))  # Only select if not all videos are downloaded
@@ -49,9 +54,24 @@ async def start_download_playlist(playlist_id: str, db: AsyncSession, redownload
     print(f"Playlist: {playlist}")
     if not playlist:
         print(f"Playlist with ID {playlist_id} not found.")
-        return "No video to download", 0
-
-
+        return TEXT_NO_VIDEO_TO_DOWNLOAD, 0
+    
+    # Check download path is correct (in a root folder)
+    result = await db.execute(select(RootFolder).where(RootFolder.path == playlist.folder))
+    root_folder = result.scalar_one_or_none()
+    if not root_folder:
+        # Set default folder if not found
+        print(f"Root folder for playlist {playlist.title} not found, setting to default.")
+        root_folder = await db.execute(select(RootFolder).where(RootFolder.is_default == True))
+        root_folder = root_folder.scalar_one_or_none()
+        if not root_folder:
+            print("No default root folder found, cannot download playlist.")
+            return TEXT_NO_ROOT_FOLDER, 0
+        
+        playlist.folder = root_folder.path
+        await db.commit()
+        await db.refresh(playlist)
+    
     nb_download_failed = 0
     nb_videos_to_download = 0
     print(f"Starting download for playlist: {playlist.title}")
@@ -127,10 +147,15 @@ async def download_playlist(playlist: Playlist, redownloadAll: bool = False):
             "playlists", 
             {"playlist_id": playlist.source_id, "download_success": False, "playlist_title": playlist.title, "message": "Error while downloading the playlist" }
         )
-    elif result == "No video to download": 
+    elif result == TEXT_NO_VIDEO_TO_DOWNLOAD: 
         await ws_manager.send_message(
             "playlists", 
             {"playlist_id": playlist.source_id, "download_success": True, "up_to_date": True, "playlist_title": playlist.title, "message": "Playlist downloaded successfully" }
+        )
+    elif result == TEXT_NO_ROOT_FOLDER:
+        await ws_manager.send_message(
+            "playlists",
+            {"playlist_id": playlist.source_id, "download_success": False, "playlist_title": playlist.title, "message": "No root folder found for this playlist, please add one or create a default root folder" }
         )
     else:
         await ws_manager.send_message(

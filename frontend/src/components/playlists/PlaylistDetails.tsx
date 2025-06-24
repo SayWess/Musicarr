@@ -24,6 +24,7 @@ import infoToast from "../toasts/infoToast";
 import PlaylistUploader from "./PlaylistUploader";
 import { COOKIE_KEY_VIDEOS } from "@/constants/cookies_keys";
 import { copyUrlToClipboard } from "@/utils/copyToClipboard";
+import { OptionsFloatingMenu } from "../floating-options/OptionsFloatingMenu";
 
 interface PlaylistDetailsProps {
   id: string;
@@ -52,6 +53,21 @@ export default function PlaylistDetails(props: PlaylistDetailsProps) {
 
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [isDownloading, setIsDownloading] = useState(false);
+
+    const optionsFloatingMenuParams = {
+    SortVideosParams: {
+      currentSortBy,
+      setSortBy,
+      currentSortOrder,
+      setSortOrder,
+      validSortFields: [...VALID_SORT_FIELDS_VIDEOS],
+      SWR_endpoint: `${endpointPlaylists}/${id}/details`,
+      cookie_key: COOKIE_KEY_VIDEOS,
+    },
+    // SelectionModeParams: {
+    //   setIsSelecting,
+    // },
+  };
 
   const {
     isOpen: isThumbnailOpen,
@@ -292,15 +308,12 @@ export default function PlaylistDetails(props: PlaylistDetailsProps) {
         />
       </div>
 
-      <SortVideos
-        currentSortBy={currentSortBy}
-        setSortBy={setSortBy}
-        currentSortOrder={currentSortOrder}
-        setSortOrder={setSortOrder}
-        validSortFields={[...VALID_SORT_FIELDS_VIDEOS]}
-        SWR_endpoint={`${endpointPlaylists}/${id}/details`}
-        cookie_key={COOKIE_KEY_VIDEOS}
-      />
+      <OptionsFloatingMenu>
+          <>
+            <SortVideos {...optionsFloatingMenuParams.SortVideosParams} />
+            {/* <SelectionModeButton {...optionsFloatingMenuParams.SelectionModeParams} /> */}
+          </>
+      </OptionsFloatingMenu>
 
       {/* Video List */}
       <div className="mt-6">

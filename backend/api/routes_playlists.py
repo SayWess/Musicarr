@@ -442,6 +442,11 @@ async def get_video_download_status(playlist_id: str, video_id: str, db: AsyncSe
     if not playlist_video:
         raise HTTPException(status_code=404, detail="Video not found in the playlist")
 
+    # if playlist_video.state == DownloadState.DOWNLOADING and (playlist_id not in downloading or (playlist_video.playlist_id, playlist_video.video_id) in downloading_videos):
+    #     playlist_video.state = DownloadState.IDLE
+    #     await db.commit()
+    # TODO fix when server is restarted when donloading a video / an item of a playlist, the status sometimes remains as DOWNLOADING
+
     return {
         "status": playlist_video.state,
         "video_id": video_id,

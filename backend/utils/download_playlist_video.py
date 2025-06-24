@@ -1,11 +1,17 @@
 import asyncio
 import re
-from database.models import Video, Playlist, DownloadFormat, DownloadQuality
+from database.models import Video, Playlist, DownloadFormat, Uploader
 from websocket_manager import ws_manager
-
+from typing import cast
 
 def get_output_path(playlist: Playlist):
-    return f"downloads/%(uploader)s/{playlist.title}/%(title)s.%(ext)s"
+    # return f"{playlist.folder}/%(uploader)s/{playlist.title}/%(title)s.%(ext)s"
+    if not playlist.uploader:
+        return f"{playlist.folder}/unknown_uploader/{playlist.title}/%(title)s.%(ext)s"
+    
+    uploader = cast(Uploader, playlist.uploader)
+    uploader_name = cast(str, uploader.name).replace("/", "-")
+    return f"{playlist.folder}/{uploader_name}/{playlist.title}/%(title)s.%(ext)s"
 
 
 async def start_download_video(playlist: Playlist, video: Video):

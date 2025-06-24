@@ -106,13 +106,6 @@ export default function ConfirmDeleteModal({ path, onCancel, onConfirm }: Props)
                 </div>
               </>
             )}
-
-            {/* <button
-              onClick={onCancel}
-              className="w-full text-gray-400 hover:text-white text-sm mt-2"
-            >
-              Close
-            </button> */}
           </div>
         </motion.div>
       </motion.div>
