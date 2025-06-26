@@ -13,7 +13,7 @@ fetching = {}
 
 
 
-async def fetch_and_store_playlist_info(playlist_url, db: AsyncSession):
+async def fetch_and_store_playlist_info(playlist_id, db: AsyncSession):
     """
     Fetches and stores playlist and videos to the database.
 
@@ -25,7 +25,7 @@ async def fetch_and_store_playlist_info(playlist_url, db: AsyncSession):
         bool: True if the playlist and videos were added successfully, else False.
     """
     # Step 1: Fetch playlist info using yt-dlp (can use your existing method)
-    playlist_info = await fetch_item_info(playlist_url)
+    playlist_info = await fetch_item_info(playlist_id)
     if not playlist_info:
         print("Failed to fetch playlist info.")
         return False

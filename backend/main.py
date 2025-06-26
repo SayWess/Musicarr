@@ -1,10 +1,25 @@
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
 import re
-
 from websocket_manager import ws_manager
+from apscheduler.schedulers.asyncio import AsyncIOScheduler
+from apscheduler.triggers.cron import CronTrigger
+from utils.update_playlists import update_playlists_downloads_job, update_playlists_info_job
+from contextlib import asynccontextmanager
 
-app = FastAPI()
+scheduler = AsyncIOScheduler()
+scheduler.add_job(update_playlists_info_job, CronTrigger(day_of_week="sun", hour=0, minute=0))
+scheduler.add_job(update_playlists_downloads_job, CronTrigger(day_of_week="mon", hour=0, minute=0))
+
+# Ensure the scheduler shuts down properly on application exit.
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    scheduler.start()
+    yield
+    scheduler.shutdown()
+
+app = FastAPI(lifespan=lifespan)
+
 
 # Function to dynamically allow 192.168.*.* IPs
 def allow_origin(origin: str) -> bool:
