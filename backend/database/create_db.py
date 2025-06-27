@@ -1,6 +1,6 @@
 from sqlalchemy.ext.asyncio import create_async_engine
 from database import Base
-from models import Uploader, Playlist, Video, PlaylistVideo
+from models import Uploader, Playlist, Video, PlaylistVideo, RootFolder
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import sessionmaker
 import os

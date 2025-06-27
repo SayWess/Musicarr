@@ -10,7 +10,10 @@ downloading_videos = {}
 async def start_download_single_video(playlist_id: str, video_id: str, db: AsyncSession):
     result = await db.execute(
         select(PlaylistVideo)
-        .options(selectinload(PlaylistVideo.video), selectinload(PlaylistVideo.playlist))
+        .options(
+            selectinload(PlaylistVideo.video), 
+            selectinload(PlaylistVideo.playlist).selectinload(Playlist.uploader)
+        )
         .where(PlaylistVideo.video_id == video_id, PlaylistVideo.playlist_id == playlist_id)
     )
 
@@ -69,7 +72,6 @@ async def download_video(playlist_video: PlaylistVideo, playlist: Playlist, vide
                 "video_title": video.title,
                 "status": "error",
             })
-    
     if result == "Video not found":
         await ws_manager.send_message("playlists", {
             "playlist_id": playlist.source_id,

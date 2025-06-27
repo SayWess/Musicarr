@@ -1,21 +1,16 @@
-import { useState, useEffect } from "react";
-import {
-  Modal,
-  ModalContent,
-  ModalHeader,
-  ModalBody,
-  ModalFooter,
-} from "@/components/modals/Modal";
-import { endpointPlaylists } from "@/constants/endpoints";
+import { useState, useEffect, use } from "react";
+import { Modal, ModalContent, ModalHeader, ModalBody, ModalFooter } from "@/components/modals/Modal";
+import { endpointPaths, endpointPlaylists } from "@/constants/endpoints";
 import { mutate } from "swr";
-import {
-  PlaylistDetails,
-  DownloadFormat,
-  DownloadQuality,
-} from "@/types/models";
-import successToast from "../toasts/successToast";
+import { PlaylistDetails, DownloadFormat, DownloadQuality } from "@/types/models";
 import errorToast from "../toasts/errorToast";
 import { Info } from "lucide-react";
+import axios from "axios";
+
+interface PathItem {
+  path: string;
+  default: boolean;
+}
 
 interface EditModalProps {
   isEditOpen: boolean;
@@ -27,9 +22,7 @@ const EditModal = ({ isEditOpen, closeEdit, playlist }: EditModalProps) => {
   // We receive the value of DownloadQuality from the backend, so we need to recover the key
   // (cause it's what we send to the backend when saving the form)
   const qualityKey = Object.keys(DownloadQuality).find(
-    (key) =>
-      DownloadQuality[key as keyof typeof DownloadQuality] ==
-      playlist.default_quality
+    (key) => DownloadQuality[key as keyof typeof DownloadQuality] == playlist.default_quality
   );
 
   const [formData, setFormData] = useState({
@@ -57,9 +50,7 @@ const EditModal = ({ isEditOpen, closeEdit, playlist }: EditModalProps) => {
     folder?: string;
   }>({});
 
-  const handleChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
-  ) => {
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value, type, checked } = e.target as HTMLInputElement;
 
     let newValue = value;
@@ -67,8 +58,7 @@ const EditModal = ({ isEditOpen, closeEdit, playlist }: EditModalProps) => {
 
     if (name === "title") {
       if (/[<>:"/\\|?*\x00-\x1F]/.test(value)) {
-        error =
-          "Le titre contient des caractères invalides pour un nom de fichier.";
+        error = "Le titre contient des caractères invalides pour un nom de fichier.";
         newValue = value
           .replace(/[<>:"\\|?*\x00-\x1F]/g, "") // on supprime les caractères invalides sauf /
           .replace(/\//g, "-"); // on remplace les / par des -
@@ -76,9 +66,9 @@ const EditModal = ({ isEditOpen, closeEdit, playlist }: EditModalProps) => {
     }
 
     if (name === "folder") {
-      if (!value.startsWith("/")) {
-        error = "Le chemin du dossier doit commencer par '/'.";
-      }
+      // if (!value.startsWith("/")) {
+      //   error = "Le chemin du dossier doit commencer par '/'.";
+      // }
       if (/[<>:"\\|?*\x00-\x1F]/.test(value)) {
         error = "Le dossier contient des caractères invalides.";
         newValue = newValue.replace(/[<>:"\\|?*\x00-\x1F]/g, "");
@@ -99,6 +89,15 @@ const EditModal = ({ isEditOpen, closeEdit, playlist }: EditModalProps) => {
   const saveEdits = async () => {
     formData.title = formData.title.trim();
     formData.folder = formData.folder.trim();
+
+    if (!paths.some((p) => p.path === formData.folder)) {
+      setValidationError((prev) => ({
+        ...prev,
+        folder: "Le dossier sélectionné n'est pas un chemin valide.",
+      }));
+      return;
+    }
+    
     try {
       const response = await fetch(`${endpointPlaylists}/${playlist.id}`, {
         method: "PUT",
@@ -120,6 +119,25 @@ const EditModal = ({ isEditOpen, closeEdit, playlist }: EditModalProps) => {
 
   const [showTooltip, setShowTooltip] = useState(false);
 
+  const [paths, setPaths] = useState<PathItem[]>([]);
+  const [loadingPaths, setLoadingPaths] = useState(false);
+
+  useEffect(() => {
+    setLoadingPaths(true);
+    fetchPaths();
+    setLoadingPaths(false);
+  }, []);
+
+  async function fetchPaths() {
+    try {
+      const res = await axios.get<PathItem[]>(`${endpointPaths}/`);
+      setPaths(res.data);
+    } catch (error) {
+      console.error("Error fetching paths:", error);
+      errorToast("Failed to fetch paths. Please check the console for details.");
+    }
+  }
+
   return (
     <Modal isOpen={isEditOpen} onClose={closeEdit}>
       <ModalContent>
@@ -130,10 +148,11 @@ const EditModal = ({ isEditOpen, closeEdit, playlist }: EditModalProps) => {
           <div className="space-y-4 p-4 lg:flex justify-between gap-6">
             <div className="flex-2 space-y-4 max-w-[500px]">
               <div>
-                <label className="block text-md font-bold text-[goldenrod]">
+                <label htmlFor="title" className="block text-md font-bold text-[goldenrod]">
                   Title
                 </label>
                 <input
+                  id="title"
                   type="text"
                   name="title"
                   value={formData.title || ""}
@@ -141,61 +160,73 @@ const EditModal = ({ isEditOpen, closeEdit, playlist }: EditModalProps) => {
                   className="w-full p-2 border rounded focus:ring focus:ring-blue-300"
                 />
                 {validationError.title && (
-                  <p className="text-sm text-red-500 mt-1">
-                    {validationError.title}
-                  </p>
+                  <p className="text-sm text-red-500 mt-1">{validationError.title}</p>
                 )}
               </div>
               <div>
-                <label className="block text-md font-bold text-[goldenrod]">
+                <label htmlFor="folder" className="block text-md font-bold text-[goldenrod]">
                   Folder
                 </label>
-                <input
-                  type="text"
-                  name="folder"
-                  value={formData.folder || ""}
-                  onChange={handleChange}
-                  className="w-full p-2 border rounded focus:ring focus:ring-blue-300"
-                />
+
+                {loadingPaths ? (
+                  <div className="text-sm text-gray-400">Loading paths...</div>
+                ) : (
+                  <select
+                    id="folder"
+                    name="folder"
+                    value={formData.folder || ""}
+                    onChange={handleChange}
+                    className="w-full p-2 border rounded bg-gray-900 text-white"
+                  >
+                    <option value="" disabled>
+                      Select a root path
+                    </option>
+                    {paths.map((p, idx) => (
+                      <option key={idx} value={p.path}>
+                        {p.path}
+                      </option>
+                    ))}
+                  </select>
+                )}
+
                 {validationError.folder && (
-                  <p className="text-sm text-red-500 mt-1">
-                    {validationError.folder}
-                  </p>
+                  <p className="text-sm text-red-500 mt-1">{validationError.folder}</p>
                 )}
               </div>
+
               <div className="flex justify-between space-x-2">
                 <div className="flex items-center space-x-2">
                   <input
+                    id="check_every_day"
                     type="checkbox"
                     name="check_every_day"
                     checked={formData.check_every_day || false}
                     onChange={handleChange}
                     className="h-5 w-5"
                   />
-                  <span className="text-md font-medium text-[goldenrod]">
+                  <label htmlFor="check_every_day" className="text-md font-medium text-[goldenrod]">
                     Check Every Day
-                  </span>
+                  </label>
                 </div>
                 <div className="flex items-center space-x-2">
                   <input
+                    id="default_subtitles"
                     type="checkbox"
                     name="default_subtitles"
                     checked={formData.default_subtitles || false}
                     onChange={handleChange}
                     className="h-5 w-5"
                   />
-                  <span className="text-md font-medium text-[goldenrod]">
+                  <label htmlFor="default_subtitles" className="text-md font-medium text-[goldenrod]">
                     Subtitles
-                  </span>
+                  </label>
                 </div>
               </div>
             </div>
 
             <div className="flex-1 space-y-4">
               <div>
-                <span className="block text-md font-bold text-[goldenrod]">
-                  Default Format
-                </span>
+                <span className="block text-md font-bold text-[goldenrod]">Default Format</span>
                 <div className="flex space-x-4 mt-1">
                   <label className="flex items-center space-x-2">
                     <input
@@ -232,12 +263,9 @@ const EditModal = ({ isEditOpen, closeEdit, playlist }: EditModalProps) => {
 
                   {/* Tooltip */}
                   {showTooltip && (
-                    <div
-                      className="absolute z-50 mt-2 ml-2 w-64 bg-gray-800 text-sm text-gray-200 rounded-md px-3 py-2 shadow-lg"
-                    >
-                      The video quality selected may not be available,
-                      it will however use the nearest quality from the one you
-                      selected.
+                    <div className="absolute z-50 mt-2 ml-2 w-64 bg-gray-800 text-sm text-gray-200 rounded-md px-3 py-2 shadow-lg">
+                      The video quality selected may not be available, it will however use the nearest quality
+                      from the one you selected.
                     </div>
                   )}
                 </div>
