@@ -6,6 +6,10 @@ from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from apscheduler.triggers.cron import CronTrigger
 from utils.update_playlists import update_playlists_downloads_job, update_playlists_info_job
 from contextlib import asynccontextmanager
+from utils.init_folders import init_folders
+
+
+init_folders()  # Initialize necessary folders
 
 scheduler = AsyncIOScheduler()
 scheduler.add_job(update_playlists_info_job, CronTrigger(day_of_week="sun", hour=0, minute=0))
