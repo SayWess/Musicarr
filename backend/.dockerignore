@@ -1,11 +1,12 @@
 Dockerfile
 .dockerignore
-__pycache__
+**/__pycache__
 venv
 README.md
 .env*
 .git
 .gitignore
-database/alembic/versions/*
+# database/alembic/versions/*
 downloads/*
 metadata/avatar/*
+Media

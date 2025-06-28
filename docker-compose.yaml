@@ -35,6 +35,7 @@ services:
     environment:
       DATABASE_URL: postgresql+asyncpg://postgres:mysecretpassword@musicarr-postgres:5432/musicarr
       DATABASE_URL_FOR_ALEMBIC: postgresql://postgres:mysecretpassword@musicarr-postgres:5432/musicarr
+      PYTHONPATH: /app
     container_name: musicarr-backend
     # ports:
     #     - "5001:80"

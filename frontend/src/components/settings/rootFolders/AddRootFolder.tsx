@@ -31,7 +31,7 @@ export default function AddRootFolder({ onPathAdded }: Props) {
 
     setAdding(true);
     try {
-      const response = await axios.post(endpointPaths, { path: newPathName });
+      const response = await axios.post(endpointPaths + "/", { path: newPathName });
       if ("error" in response.data) {
         errorToast(response.data.error || "Failed to add path");
         return;
