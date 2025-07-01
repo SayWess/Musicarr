@@ -148,7 +148,7 @@ export default function AddRootFolder({ onPathAdded }: Props) {
                     return (
                       <li key={p}>
                         <button
-                          onClick={() => fetchMountPaths(p.split("/").slice(1).join("/"))}
+                          onClick={() => fetchMountPaths(p.split('Media/').slice(1).join("/"))}
                           className="w-full text-left bg-gray-800 hover:bg-gray-700 p-3 rounded-lg font-mono flex justify-between items-center"
                         >
                           <span>{name}</span>
