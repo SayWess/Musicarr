@@ -31,7 +31,8 @@ services:
       context: ./backend
       dockerfile: Dockerfile
     volumes:
-      - musicarr_storage:/musicarr/Storage
+      - musicarr_storage:/Media/downloads
+      - metadata_storage:/app/metadata
     environment:
       DATABASE_URL: postgresql+asyncpg://postgres:mysecretpassword@musicarr-postgres:5432/musicarr
       DATABASE_URL_FOR_ALEMBIC: postgresql://postgres:mysecretpassword@musicarr-postgres:5432/musicarr
@@ -69,3 +70,4 @@ networks:
 volumes:
   postgres_data:
   musicarr_storage:
+  metadata_storage:

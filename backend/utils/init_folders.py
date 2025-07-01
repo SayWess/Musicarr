@@ -7,7 +7,7 @@ def init_folders():
     Initialize the necessary folders for the application.
     """
     folders = [
-        MNT_PATH,
+        MNT_PATH + "/downloads",
     ]
 
     for folder in folders:
