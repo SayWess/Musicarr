@@ -122,6 +122,19 @@ async def delete_video_from_default_playlist(video_id: str, db: AsyncSession = D
     await db.delete(existing_relation)
     await db.commit()
 
+    result = await db.execute(
+        select(PlaylistVideo).filter(
+            PlaylistVideo.video_id == video.id
+        )
+    )
+    existing_relation = result.scalars().first()
+
+    if not existing_relation:
+        print("Deleting video from db")
+        # Delete the video from the db
+        await db.delete(video)
+        await db.commit()
+
     return {"message": "Video deleted"}
 
 @router.get("/{video_id}/is_fetching")
