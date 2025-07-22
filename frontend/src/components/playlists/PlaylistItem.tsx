@@ -8,10 +8,7 @@ import { endpointPlaylists } from "@/constants/endpoints";
 import { useEffect } from "react";
 import { useState } from "react";
 import { useWebSocket } from "@/hooks/useWebSocket";
-import {
-  endpointWebSocketPlaylists,
-  endpointUploadersAvatar,
-} from "@/constants/endpoints";
+import { endpointWebSocketPlaylists, endpointUploadersAvatar } from "@/constants/endpoints";
 import { toast } from "sonner";
 import useSWR from "swr";
 import { fetcher } from "@/utils/fetcher";
@@ -88,9 +85,7 @@ export const PlaylistItem = ({
   }, [playlist.id]);
 
   const avatarUrl = playlist.uploader_id
-    ? `${endpointUploadersAvatar}/${encodeURIComponent(
-        playlist.uploader_id
-      )}.jpg`
+    ? `${endpointUploadersAvatar}/${encodeURIComponent(playlist.uploader_id)}.jpg`
     : "";
 
   const styles = {
@@ -113,24 +108,18 @@ export const PlaylistItem = ({
       )}
     >
       {/* Thumbnail Container */}
-      <div className="relative group overflow-hidden rounded-xl">
-        {/* Image */}
+      <div className="relative group overflow-hidden rounded-xl aspect-[16/9] ">
         <Image
           src={playlist.thumbnail || "/404_page-not-found.webp"}
           alt={playlist.title}
-          priority={true}
-          width={200}
-          height={100}
-          className="w-full min-h-25 object-cover transition-transform duration-300 group-hover:scale-105"
+          width={400}
+          height={300}
+          className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
         />
-
 
         {/* Stronger Gradient Overlay & Title */}
         <div className="absolute bottom-0 left-0 w-full bg-gradient-to-t from-black/80 to-transparent pl-2 pt-3 pr-2 pb-1">
-          <h2
-            className="text-white font-bold truncate drop-shadow-xl"
-            style={styles.title}
-          >
+          <h2 className="text-white font-bold truncate drop-shadow-xl" style={styles.title}>
             {playlist.title}
           </h2>
         </div>
@@ -152,10 +141,7 @@ export const PlaylistItem = ({
             transition={{ duration: 0.2 }}
           >
             {playlist.check_every_day ? (
-              <CheckCircle
-                size={isGridSmall ? 15 : 20}
-                className="text-blue-500"
-              />
+              <CheckCircle size={isGridSmall ? 15 : 20} className="text-blue-500" />
             ) : (
               <Circle size={isGridSmall ? 15 : 20} className="text-gray-400" />
             )}
@@ -166,9 +152,7 @@ export const PlaylistItem = ({
         <div className="absolute top-2 right-2 rounded-full ring-4 ring-gray-800 bg-gray-800 transition-transform duration-300 group-hover:scale-0">
           {!avatarError && avatarUrl !== "" ? (
             <Image
-              className={`bg-gray-900 rounded-full h-auto ${
-                isGridSmall ? "w-[24px]" : "w-[40px]"
-              } ring-2 ${
+              className={`bg-gray-900 rounded-full h-auto ${isGridSmall ? "w-[24px]" : "w-[40px]"} ring-2 ${
                 playlist.check_every_day ? "ring-blue-500" : "ring-white"
               }
              bg-gray-800 shadow-md`}
@@ -182,9 +166,7 @@ export const PlaylistItem = ({
           ) : (
             <User
               size={64}
-              className={`bg-gray-900 rounded-full h-auto ${
-                isGridSmall ? "w-[24px]" : "w-[40px]"
-              } ring-2 ${
+              className={`bg-gray-900 rounded-full h-auto ${isGridSmall ? "w-[24px]" : "w-[40px]"} ring-2 ${
                 playlist.check_every_day ? "ring-blue-500" : "ring-white"
               } bg-gray-800 shadow-md`}
             />
@@ -194,9 +176,7 @@ export const PlaylistItem = ({
         {/* Missing Videos Indicator (Bottom-Left) */}
         <span
           className={`absolute top-2 left-2 py-1 text-sm text-white font-semibold shadow-[0px_0px_4px_2px_#444444] rounded-md transition-all duration-300 ${
-            !isLoading && data && data.total_videos === data.downloaded_videos
-              ? "bg-green-500"
-              : "bg-red-500"
+            !isLoading && data && data.total_videos === data.downloaded_videos ? "bg-green-500" : "bg-red-500"
           }
           ${isGridSmall ? "text-[12px] px-[0.4rem]" : "px-2"}
           `}
@@ -205,9 +185,7 @@ export const PlaylistItem = ({
             <span className="animate-pulse"></span>
           ) : (
             <span className={"drop-shadow-[0_1.2px_1.2px_rgba(0,0,0,1)]"}>
-              {data.total_videos !== data.downloaded_videos
-                ? data.total_videos - data.downloaded_videos
-                : ""}
+              {data.total_videos !== data.downloaded_videos ? data.total_videos - data.downloaded_videos : ""}
             </span>
           )}
         </span>
