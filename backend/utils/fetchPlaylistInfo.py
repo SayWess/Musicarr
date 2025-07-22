@@ -1,13 +1,16 @@
-from database.models import Playlist, Video, Uploader, PlaylistVideo  # Import your models
+from database.models import Playlist, RootFolder, Video, Uploader, PlaylistVideo  # Import your models
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 
 from websocket_manager import ws_manager
 from database.database import SessionLocal
 
+from utils.constants import MNT_PATH
 from utils.sanitize import sanitize_title
 from utils.download_uploader_avatar import download_uploader_avatar
-from utils.fetch_item_info import fetch_item_info
+from utils.youtube_api import get_playlist_info, get_playlist_items, get_video_details, get_best_thumbnail
+
+
 
 fetching = {}
 
@@ -24,17 +27,52 @@ async def fetch_and_store_playlist_info(playlist_id, db: AsyncSession):
     Returns:
         bool: True if the playlist and videos were added successfully, else False.
     """
-    # Step 1: Fetch playlist info using yt-dlp (can use your existing method)
-    playlist_info = await fetch_item_info(playlist_id)
-    if not playlist_info:
+    # Step 1: Fetch playlist info using youtube API
+    playlist_snippet = await get_playlist_info(playlist_id)
+    if not playlist_snippet:
         print("Failed to fetch playlist info.")
         return False
+
+    playlist_snippet = playlist_snippet["snippet"]
+    playlist_info = {
+        "id": playlist_id,
+        "title": playlist_snippet["title"],
+        "description": playlist_snippet.get("description", ""),
+        "channel_id": playlist_snippet["channelId"],
+        "uploader": playlist_snippet["channelTitle"],
+        "channel_url": f"https://www.youtube.com/channel/{playlist_snippet['channelId']}"
+    }
+
+    entries_raw = await get_playlist_items(playlist_id)
+    video_ids = [item["contentDetails"]["videoId"] for item in entries_raw]
+    video_details = await get_video_details(video_ids)
+
+    playlist_info["entries"] = []
+    for item in entries_raw:
+        vid = item["contentDetails"]["videoId"]
+        details = video_details.get(vid)
+        if not details:
+            continue
+
+        snippet = details["snippet"]
+        playlist_info["entries"].append({
+            "id": vid,
+            "title": snippet["title"],
+            "description": snippet.get("description", ""),
+            "thumbnail": get_best_thumbnail(snippet),
+            "upload_date": snippet["publishedAt"].split("T")[0].replace("-", ""),  # format yyyymmdd
+            "channel_id": snippet["channelId"],
+            "uploader": snippet["channelTitle"],
+            "uploader_url": f"https://www.youtube.com/channel/{snippet['channelId']}",
+            "duration_string": details["contentDetails"]["duration"]
+        })
+
 
     # Step 2: Check if the uploader exists or create a new uploader
     result = await db.execute(
         select(Uploader).filter(Uploader.channel_id == playlist_info.get("channel_id"))
     )
-    uploader = result.scalars().first()  # Extract single result
+    uploader = result.scalars().first()
 
     if not uploader:
         # Create a new uploader if not found
@@ -76,6 +114,20 @@ async def fetch_and_store_playlist_info(playlist_id, db: AsyncSession):
         print("Updated existing playlist:", playlist.title)
     
     else:
+        result = await db.execute(
+            select(RootFolder).filter(RootFolder.is_default == True) 
+        )
+        root_folder = result.scalars().first()
+        if not root_folder:
+            root_folder = RootFolder(
+                name="Default",
+                path=MNT_PATH,
+                is_default=True
+            )
+            db.add(root_folder)
+            await db.flush()  # Flush to get the root folder ID
+            print("Created default root folder:", root_folder.path)
+
         # Create new playlist if it doesn't exist
         playlist = Playlist(
             source_id=playlist_info.get("id"),
@@ -83,7 +135,8 @@ async def fetch_and_store_playlist_info(playlist_id, db: AsyncSession):
             description=playlist_info.get("description"),
             thumbnail=first_entry.get("thumbnail"),
             uploader_id=uploader.id if uploader else None,
-            last_published=last_published
+            last_published=last_published,
+            folder=root_folder.path,
         )
         db.add(playlist)
         await db.flush() # Flush to get the playlist ID

@@ -6,7 +6,7 @@ from websocket_manager import ws_manager
 from database.database import SessionLocal
 
 from utils.download_uploader_avatar import download_uploader_avatar
-from utils.fetch_item_info import fetch_item_info
+from utils.youtube_api import fetch_video_info_from_api
 
 from datetime import datetime as Datetime
 
@@ -26,7 +26,7 @@ async def fetch_and_store_video_info(video_id, db: AsyncSession):
         bool: True if the playlist and videos were added successfully, else False.
     """
     # Step 1: Fetch playlist info using yt-dlp (can use your existing method)
-    video_info = await fetch_item_info(video_id)
+    video_info = await fetch_video_info_from_api(video_id)
     if not video_info:
         print("Failed to fetch video info.")
         return False
