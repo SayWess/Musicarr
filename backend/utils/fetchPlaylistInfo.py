@@ -107,7 +107,6 @@ async def fetch_and_store_playlist_info(playlist_id, db: AsyncSession):
         root_folder = result.scalars().first()
         if not root_folder:
             root_folder = RootFolder(
-                name="Default",
                 path=MNT_PATH,
                 is_default=True
             )
@@ -248,7 +247,7 @@ async def fetch_full_playlist(playlist_id: str, playlist_title: str = None):
             result = None
 
             # Remove playlist from db
-            await db.execute(
+            result_request = await db.execute(
                 select(Playlist).filter(Playlist.source_id == playlist_id)
             )
             playlist = result_request.scalars().first()
