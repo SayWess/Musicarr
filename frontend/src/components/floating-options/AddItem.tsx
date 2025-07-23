@@ -52,10 +52,6 @@ const AddItem = () => {
         return;
       }
 
-      extracted.type == "playlists"
-        ? mutate(`${endpointApi}/${extracted.type}`)
-        : mutate(`${endpointApi}/playlists/0/details`);
-
       infoToast(`Fetching data for ${extracted.type.substring(0, -1)}: ${extracted.id}`);
     } catch (error) {
       console.error("Error fetching data:", error);

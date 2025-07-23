@@ -6,7 +6,7 @@ from websocket_manager import ws_manager
 from database.database import SessionLocal
 
 from utils.download_uploader_avatar import download_uploader_avatar
-from utils.fetch_item_info import fetch_item_info
+from utils.youtube_api import fetch_video_info_from_api
 
 from datetime import datetime as Datetime
 
@@ -26,7 +26,7 @@ async def fetch_and_store_video_info(video_id, db: AsyncSession):
         bool: True if the playlist and videos were added successfully, else False.
     """
     # Step 1: Fetch playlist info using yt-dlp (can use your existing method)
-    video_info = await fetch_item_info(video_id)
+    video_info = await fetch_video_info_from_api(video_id)
     if not video_info:
         print("Failed to fetch video info.")
         return False
@@ -86,6 +86,7 @@ async def fetch_and_store_video_info(video_id, db: AsyncSession):
                 print("Created new uploader:", uploader.name)
                 print("Downloading uploader avatar...")
                 await download_uploader_avatar(uploader.id, db)
+
         await db.commit()  # Commit uploader creation
 
         # If the video is not in the database, create a new video
@@ -96,7 +97,8 @@ async def fetch_and_store_video_info(video_id, db: AsyncSession):
             thumbnail=video_info.get("thumbnail"),
             upload_date=video_info.get("upload_date"),
             duration=video_info.get("duration_string"),
-            uploader_id=uploader.id if uploader else None  # Link the uploader to the video
+            uploader_id=uploader.id if uploader else None,
+            available=video_info.get("is_available", True),
         )
         db.add(video)
         await db.flush()
@@ -111,6 +113,7 @@ async def fetch_and_store_video_info(video_id, db: AsyncSession):
         video.duration = video_info.get("duration_string")
         if uploader:
             video.uploader_id = uploader.id
+        video.available = video_info.get("is_available", True)
 
     # Step 5: Create the relationship entry between Playlist and Video
     result = await db.execute(
@@ -160,6 +163,11 @@ async def fetch_full_video(video_id: str, video_title: str = None):
             # Fetch and store video info
             print(f"Fetching video info for {video_id}...")
             result = await fetch_and_store_video_info(video_id, db)
+            result_request = await db.execute(
+                select(Video).filter(Video.source_id == video_id)
+            )
+            video = result_request.scalars().first()
+            video_title = video.title if video else video_title
         except Exception as e:
             print(f"Error fetching video info: {e}")
             result = None

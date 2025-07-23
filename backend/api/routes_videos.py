@@ -30,7 +30,7 @@ async def get_independant_videos(db: AsyncSession = Depends(get_db)):
         {
             "id": video.source_id,
             "title": video.title,
-            "state": video.state,
+            "state": video.available,
         }
         for video in videos
     ]
@@ -83,6 +83,7 @@ async def add_video(video_id: str, db: AsyncSession = Depends(get_db)):
         print(f"Starting background task to fetch full video details for {video_id}...")
         asyncio.create_task(fetch_full_video(video_id))
 
+
     return {"message": "Video added", "video": video}
 
 
@@ -121,6 +122,19 @@ async def delete_video_from_default_playlist(video_id: str, db: AsyncSession = D
     # Delete the relationship entry
     await db.delete(existing_relation)
     await db.commit()
+
+    result = await db.execute(
+        select(PlaylistVideo).filter(
+            PlaylistVideo.video_id == video.id
+        )
+    )
+    existing_relation = result.scalars().first()
+
+    if not existing_relation:
+        print("Deleting video from db")
+        # Delete the video from the db
+        await db.delete(video)
+        await db.commit()
 
     return {"message": "Video deleted"}
 
