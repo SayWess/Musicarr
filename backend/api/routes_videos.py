@@ -30,7 +30,7 @@ async def get_independant_videos(db: AsyncSession = Depends(get_db)):
         {
             "id": video.source_id,
             "title": video.title,
-            "state": video.state,
+            "state": video.available,
         }
         for video in videos
     ]
@@ -82,6 +82,7 @@ async def add_video(video_id: str, db: AsyncSession = Depends(get_db)):
     if new_video:
         print(f"Starting background task to fetch full video details for {video_id}...")
         asyncio.create_task(fetch_full_video(video_id))
+
 
     return {"message": "Video added", "video": video}
 

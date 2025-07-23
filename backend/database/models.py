@@ -83,6 +83,7 @@ class Video(Item):
     __tablename__ = "videos"
 
     duration = Column(String, nullable=True)
+    available = Column(Boolean, default=True)  # Whether the video is available for download
 
     # ForeignKey to Uploader
     uploader_id = Column(UUID(as_uuid=True), ForeignKey("uploaders.id"), nullable=True)

@@ -174,7 +174,7 @@ const EditModal = ({ isEditOpen, closeEdit, playlist }: EditModalProps) => {
                   <select
                     id="folder"
                     name="folder"
-                    value={formData.folder || ""}
+                    value={paths.some((p) => p.path === formData.folder) ? formData.folder : ""}
                     onChange={handleChange}
                     className="w-full p-2 border rounded bg-gray-900 text-white"
                   >

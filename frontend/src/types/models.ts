@@ -74,6 +74,7 @@ interface VideoDetails {
   downloaded: boolean;
   state: DownloadState;
   upload_date: string;
+  available: boolean;
 }
 
 export type { Playlist, Video, PlaylistDetails, VideoDetails, Uploader};

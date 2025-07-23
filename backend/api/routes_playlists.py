@@ -150,24 +150,24 @@ async def add_playlist(playlist_id: str, db: AsyncSession = Depends(get_db)):
     if existing_playlist:
         return {"message": "Playlist already exists", "error": True}
 
-    # Create a new playlist instance
-    new_playlist = Playlist(
-        source_id=playlist_id,
-        title="Fetching playlist " + playlist_id,
-    )
+    # # Create a new playlist instance
+    # new_playlist = Playlist(
+    #     source_id=playlist_id,
+    #     title=playlist_id + "...",
+    # )
 
-    # Add the new playlist to the database
-    db.add(new_playlist)
-    await db.commit()
+    # # Add the new playlist to the database
+    # db.add(new_playlist)
+    # await db.commit()
 
-    print("Playlist committed")
+    # print("Playlist committed")
 
     # Start background task to fetch full playlist details
     asyncio.create_task(fetch_full_playlist(playlist_id))
 
-    print("Playlist added")
+    print("Playlist is being added")
 
-    return {"message": "Playlist added", "playlist": new_playlist}
+    return {"message": "Playlist added", "playlist": "Being fetched..."}
 
 class UpdateUploaderRequest(BaseModel):
     uploader_id: Optional[str] = None
@@ -271,6 +271,7 @@ async def get_playlist_details(
                 "thumbnail": video.thumbnail,
                 "duration": video.duration,
                 "upload_date": video.upload_date,
+                "available": video.available,
             }
             for video, state in videos
         ]

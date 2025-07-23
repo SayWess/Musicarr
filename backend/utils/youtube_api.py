@@ -38,10 +38,12 @@ async def get_playlist_items(playlist_id):
 
     return videos
 
+
 def chunked(lst, n):
     """Découpe une liste en morceaux de taille n."""
     for i in range(0, len(lst), n):
         yield lst[i:i + n]
+
 
 async def get_video_details(video_ids):
     result = {}
@@ -53,18 +55,19 @@ async def get_video_details(video_ids):
         )
         response = video_request.execute()
         for item in response.get("items", []):
-            result[item["id"]] = item
+            result[item["id"]] = process_video_details(item)
 
     return result
+
 
 def get_best_thumbnail(snippet: dict) -> str | None:
     thumbnails = snippet.get("thumbnails", {})
     return (
         thumbnails.get("maxres", {}).get("url")
-        or thumbnails.get("standard", {}).get("url")
         or thumbnails.get("high", {}).get("url")
         or thumbnails.get("medium", {}).get("url")
         or thumbnails.get("default", {}).get("url")
+        or thumbnails.get("standard", {}).get("url")
     )
 
 
@@ -87,6 +90,13 @@ def parse_duration(duration: str) -> str:
         return f"{minutes}:{seconds:02}"
 
 
+def is_available(content: dict) -> bool:
+    """
+    Vérifie si la vidéo est disponible en fonction de son statut.
+    """
+    return "FR" not in content.get("regionRestriction", {}).get("blocked", [])
+
+
 async def fetch_video_info_from_api(video_id: str) -> dict | None:
     try:
         response = YOUTUBE.videos().list(
@@ -101,11 +111,22 @@ async def fetch_video_info_from_api(video_id: str) -> dict | None:
         return None
 
     video = response["items"][0]
-    snippet = video["snippet"]
-    content = video["contentDetails"]
+    
+    return process_video_details(video)
+
+
+def process_video_details(video_info: dict) -> dict:
+    """
+    Process the video details to extract relevant information.
+    """
+    if not video_info:
+        return {}
+    
+    snippet = video_info["snippet"]
+    content = video_info["contentDetails"]
 
     return {
-        "id": video_id,
+        "id": video_info["id"],
         "title": snippet["title"],
         "description": snippet.get("description", ""),
         "thumbnail": get_best_thumbnail(snippet),
@@ -116,4 +137,36 @@ async def fetch_video_info_from_api(video_id: str) -> dict | None:
         "channel_url": f"https://www.youtube.com/channel/{snippet['channelId']}",
         "uploader_id": snippet["channelId"],
         "uploader_url": f"https://www.youtube.com/channel/{snippet['channelId']}",
+        "is_available": is_available(content)
     }
+
+
+# {
+#   "kind": "youtube#videoListResponse",
+#   "etag": "YGLgUWF_jMKIWRdn_GhATio-NKM",
+#   "items": [
+#     {
+#       "kind": "youtube#video",
+#       "etag": "tyTfakn_1Ws1OBOy1IbZvHzf1Eo",
+#       "id": "jpaVrnf1J1M",
+#       "contentDetails": {
+#         "duration": "PT3M18S",
+#         "dimension": "2d",
+#         "definition": "hd",
+#         "caption": "false",
+#         "licensedContent": false,
+#         "regionRestriction": {
+#           "blocked": [
+#             "FR",
+#           ]
+#         },
+#         "contentRating": {},
+#         "projection": "rectangular"
+#       }
+#     }
+#   ],
+#   "pageInfo": {
+#     "totalResults": 1,
+#     "resultsPerPage": 1
+#   }
+# }

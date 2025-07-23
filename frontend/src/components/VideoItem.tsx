@@ -43,7 +43,8 @@ export const VideoItem = ({
   const isDownloaded = download_status?.status === "DOWNLOADED";
   const downloading = download_status?.status === "DOWNLOADING";
   const isError = download_status?.status === "ERROR";
-  
+  const isUnavailable = video.available === false;
+
   return (
     <div
       className={`flex items-center bg-gray-900 text-gray-200 p-2 md:p-4 rounded-lg shadow-md transition-all duration-300
@@ -53,6 +54,7 @@ export const VideoItem = ({
       ${isError ? "bg-red-900/20" : ""}
       ${!downloading && isSelectable && isSelected ? "ring-2 ring-green-500/50 hover:ring-green-500/50" : ""}
       ${downloading && isSelectable ? "select-blocked" : ""}
+      ${isUnavailable ? "bg-yellow-900/20 cursor-not-allowed select-blocked not-available" : ""}
       `}
     >
       <Image
