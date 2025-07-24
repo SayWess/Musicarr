@@ -60,7 +60,7 @@ const useDownloadProgress = (playlistId: string) => {
             return updated;
           });
           updateStatus(video_id, "ERROR");
-          errorToast(`Download failed: ${data.video_title || video_id}`);
+          errorToast(`Download of ${data.video_title || video_id} failed.`, data.message);
           break;
       }
     },

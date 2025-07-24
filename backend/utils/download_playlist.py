@@ -1,4 +1,4 @@
-from database.models import Playlist, PlaylistVideo, DownloadState, RootFolder # Import your models
+from database.models import Playlist, PlaylistVideo, Video, DownloadState, RootFolder # Import your models
 from sqlalchemy.ext.asyncio import AsyncSession
 from utils.download_playlist_video import start_download_video
 
@@ -77,11 +77,12 @@ async def start_download_playlist(playlist_id: str, db: AsyncSession, redownload
     print(f"Starting download for playlist: {playlist.title}")
 
     for playlist_video in playlist.videos:
+        playlist_video: PlaylistVideo
         if not redownloadAll and playlist_video.state not in [DownloadState.IDLE, DownloadState.ERROR]:
             continue
         
-        video = playlist_video.video
-        if not video:
+        video: Video = playlist_video.video
+        if not video or video.available is False:
             continue
 
         nb_videos_to_download += 1
@@ -124,7 +125,6 @@ async def start_download_playlist(playlist_id: str, db: AsyncSession, redownload
     return nb_download_failed, nb_videos_to_download
 
 
-    
 
 async def download_playlist(playlist: Playlist, redownloadAll: bool = False):
     """
