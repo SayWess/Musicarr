@@ -101,7 +101,7 @@ export default function PlaylistDetails(props: PlaylistDetailsProps) {
         setIsDownloading(false);
 
         if (data.up_to_date) {
-          successToast("Playlist is already up to date.");
+          successToast(data.message || "Playlist is already up to date.");
         } else {
           if (data.nb_download_failed === 0) {
             successToast("Playlist downloaded successfully.");
@@ -117,7 +117,7 @@ export default function PlaylistDetails(props: PlaylistDetailsProps) {
         console.log("Playlist downloaded successfully.");
       } else if (data.download_success === false) {
         setIsDownloading(false);
-        errorToast("Playlist download failed.");
+        errorToast("Playlist download failed.", data.message || "An error occurred during the download.");
       }
     },
     webSocketKey

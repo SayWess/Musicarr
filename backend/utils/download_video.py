@@ -1,4 +1,4 @@
-from database.models import PlaylistVideo, DownloadState, Video, Playlist
+from database.models import PlaylistVideo, DownloadState, RootFolder, Video, Playlist
 from sqlalchemy.ext.asyncio import AsyncSession
 from utils.download_playlist_video import start_download_video
 from websocket_manager import ws_manager
@@ -9,6 +9,7 @@ downloading_videos = {}
 
 TEXT_VIDEO_NOT_FOUND = "Video not found"
 TEXT_VIDEO_NOT_AVAILABLE = "Video not available"
+TEXT_NO_ROOT_FOLDER = "No root folder found"
 
 async def start_download_single_video(playlist_id: str, video_id: str, db: AsyncSession):
     result = await db.execute(
@@ -31,6 +32,22 @@ async def start_download_single_video(playlist_id: str, video_id: str, db: Async
     if video.available is False:
         print(f"Video {video.title} is not available for download.")
         return TEXT_VIDEO_NOT_AVAILABLE
+    
+    # Check download path is correct (in a root folder)
+    result = await db.execute(select(RootFolder).where(RootFolder.path == playlist.folder))
+    root_folder = result.scalar_one_or_none()
+    if not root_folder:
+        # Set default folder if not found
+        print(f"Root folder for playlist {playlist.title} not found, setting to default.")
+        root_folder = await db.execute(select(RootFolder).where(RootFolder.is_default == True))
+        root_folder = root_folder.scalar_one_or_none()
+        if not root_folder:
+            print("No default root folder found, cannot download playlist.")
+            return TEXT_NO_ROOT_FOLDER
+        
+        playlist.folder = root_folder.path
+        await db.commit()
+        await db.refresh(playlist)
 
     playlist_video.state = DownloadState.DOWNLOADING
     await db.commit()
@@ -94,6 +111,14 @@ async def download_video(playlist_video: PlaylistVideo, playlist: Playlist, vide
             "video_title": video.title,
             "status": "error",
             "message": TEXT_VIDEO_NOT_AVAILABLE
+        })
+    elif result == TEXT_NO_ROOT_FOLDER:
+        await ws_manager.send_message("playlists", {
+            "playlist_id": playlist.source_id,
+            "video_id": video.source_id,
+            "video_title": video.title,
+            "status": "error",
+            "message": TEXT_NO_ROOT_FOLDER
         })
 
     downloading_videos.pop((playlist_video.playlist_id, playlist_video.video_id), None)

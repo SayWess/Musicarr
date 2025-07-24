@@ -150,7 +150,7 @@ async def download_playlist(playlist: Playlist, redownloadAll: bool = False):
     elif result == TEXT_NO_VIDEO_TO_DOWNLOAD: 
         await ws_manager.send_message(
             "playlists", 
-            {"playlist_id": playlist.source_id, "download_success": True, "up_to_date": True, "playlist_title": playlist.title, "message": "Playlist downloaded successfully" }
+            {"playlist_id": playlist.source_id, "download_success": True, "up_to_date": True, "playlist_title": playlist.title, "message": "Playlist already up to date" }
         )
     elif result == TEXT_NO_ROOT_FOLDER:
         await ws_manager.send_message(
