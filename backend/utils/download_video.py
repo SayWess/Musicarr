@@ -7,6 +7,9 @@ from sqlalchemy.orm import selectinload
 
 downloading_videos = {}
 
+TEXT_VIDEO_NOT_FOUND = "Video not found"
+TEXT_VIDEO_NOT_AVAILABLE = "Video not available"
+
 async def start_download_single_video(playlist_id: str, video_id: str, db: AsyncSession):
     result = await db.execute(
         select(PlaylistVideo)
@@ -20,10 +23,14 @@ async def start_download_single_video(playlist_id: str, video_id: str, db: Async
     playlist_video = result.scalar_one_or_none()
     if not playlist_video or not playlist_video.video or not playlist_video.playlist:
         print(f"Video or playlist not found for video ID {video_id}")
-        return "Video not found"
+        return TEXT_VIDEO_NOT_FOUND
 
-    video = playlist_video.video
-    playlist = playlist_video.playlist
+    video: Video = playlist_video.video
+    playlist: Playlist = playlist_video.playlist
+
+    if video.available is False:
+        print(f"Video {video.title} is not available for download.")
+        return TEXT_VIDEO_NOT_AVAILABLE
 
     playlist_video.state = DownloadState.DOWNLOADING
     await db.commit()
@@ -72,13 +79,21 @@ async def download_video(playlist_video: PlaylistVideo, playlist: Playlist, vide
                 "video_title": video.title,
                 "status": "error",
             })
-    if result == "Video not found":
+    if result == TEXT_VIDEO_NOT_FOUND:
         await ws_manager.send_message("playlists", {
             "playlist_id": playlist.source_id,
             "video_id": video.source_id,
             "video_title": video.title,
             "status": "error",
-            "message": "Video not found"
+            "message": TEXT_VIDEO_NOT_FOUND
+        })
+    elif result == TEXT_VIDEO_NOT_AVAILABLE:
+        await ws_manager.send_message("playlists", {
+            "playlist_id": playlist.source_id,
+            "video_id": video.source_id,
+            "video_title": video.title,
+            "status": "error",
+            "message": TEXT_VIDEO_NOT_AVAILABLE
         })
 
     downloading_videos.pop((playlist_video.playlist_id, playlist_video.video_id), None)

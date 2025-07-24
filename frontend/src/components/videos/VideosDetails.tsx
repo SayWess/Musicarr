@@ -191,7 +191,7 @@ export default function VideosDetails(props: PlaylistDetailsProps) {
   };
 
   const handleDownloadSelected = async () => {
-    if (isDownloading) return;
+    if (isDownloading || selectedVideos.length === 0) return;
 
     try {
       await Promise.all(
@@ -358,7 +358,7 @@ export default function VideosDetails(props: PlaylistDetailsProps) {
             <div
               key={video.id}
               {...longClickHandlers}
-              onClick={() => (isSelecting ? handleSelect(video.id) : null)}
+              onClick={() => (isSelecting && video.available !== false ? handleSelect(video.id) : null)}
             >
               <VideoItem
                 playlist_id={playlist.id}
@@ -368,7 +368,7 @@ export default function VideosDetails(props: PlaylistDetailsProps) {
                 onDownload={handleVideoDownload}
                 openThumbnailModal={openThumbnailModal}
                 isSelected={selectedVideos.includes(video.id)}
-                isSelectable={isSelecting}
+                isSelectable={isSelecting && video.available !== false}
               />
             </div>
           ))}

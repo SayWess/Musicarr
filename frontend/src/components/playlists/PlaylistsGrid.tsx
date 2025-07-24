@@ -115,15 +115,18 @@ export default function Playlists(props: PlaylistsProps) {
             <motion.div
               key={playlist.id}
               layout
+              layoutId={`playlist-${playlist.id}`}
               variants={{
                 hidden: { opacity: 0 },
                 show: { opacity: 1 },
               }}
-              transition={{ duration: 0.3 }}
+              initial="hidden"
+              animate="show"
+              exit="hidden"
+              transition={{ duration: 1 }}
               style={{ willChange: "transform, opacity" }}
             >
               <PlaylistItem
-                key={playlist.id}
                 playlist={playlist}
                 toggleCheckEveryDay={toggleCheckEveryDay}
                 isGridSmall={isGridSmall}
