@@ -94,6 +94,11 @@
 * [![Next][Next.js]][Next-url]
 * [![React][React.js]][React-url]
 * [![TypeScript][TypeScript.org]][TypeScript-url]
+* [![TailwindCSS][TailwindCSS.com]][TailwindCSS-url]
+* [![FastAPI][FastAPI.com]][FastAPI-url]
+* [![SQLAlchemy][SQLAlchemy.org]][SQLAlchemy-url]
+* [Alembic][Alembic-url]
+* [![PostgreSQL][PostgreSQL.org]][PostgreSQL-url]
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
@@ -102,13 +107,10 @@
 <!-- GETTING STARTED -->
 ## Getting Started
 
-<!-- ### Prerequisites
+### Prerequisites
 
-This is an example of how to list things you need to use the software and how to install them.
-* npm
-  ```sh
-  npm install npm@latest -g
-  ``` -->
+* **Docker Compose** : You need docker and docker compose installed on your system to run the application, refer to this link for the installation [Docker][Docker-url]. I find the install using the repo to be the easiest.
+* **YouTube Data API key** : You can get your api key here [Console.google.cloud][google-cloud-url]. You must `create a project` and `add YouTube Data API v3` in the APIs your project is using. The go to `credentials or identifiers` and `create an API key`. (optional) Restrict it to Youtube Data API v3. 
 
 ### Installation
 
@@ -116,41 +118,71 @@ This is an example of how to list things you need to use the software and how to
    ```sh
    git clone https://github.com/SayWess/Musicarr.git
    ```
-2. Config the environment variables in the `docker-compose.yaml`, you can either create a `.env` file with the following variables or just past the values inside the docker-compose file, or any other way you prefer.
+2. Config the environment variables in `docker-compose.yaml`, you can either create a `.env` file with the following variables or just past the values inside the docker-compose file, or any other way you prefer.
    - **DATABASE_URL=postgresql+asyncpg://postgres:`mysecretpassword`@musicarr-postgres:5432/musicarr**
    - **DATABASE_URL_FOR_ALEMBIC=postgresql://postgres:`mysecretpassword`@musicarr-postgres:5432/musicarr**
    - **YOUTUBE_API_KEY=your-api-key** <br/>
-  Be sure that `mysecretpassword` matches the password of the db you set in the docker-compose file (**POSTGRES_PASSWORD**)
-3. Build then run the docker compose
+  Be sure that `mysecretpassword` matches the password of the db you set in the docker-compose file (**POSTGRES_PASSWORD**).
+3. Config your volumes in `docker-compose.yaml`. By default docker creates the volumes so you do not have access to them outside of the container, if you want to access the data you must specify a folder that will be mounted inside the container.
+   ```yaml
+     musicarr-backend:
+      build:
+        context: ./backend
+        dockerfile: Dockerfile
+      volumes:
+        - your-absolute-path:/Media
+        - metadata_storage:/app/metadata
+    ```
+
+    ```yaml
+    volumes:
+      postgres_data:
+      # musicarr_storage:
+      metadata_storage:
+    ```
+4. Build then run the docker compose
    ```bash
    sudo docker compose build
    sudo docker compose up
    ```
-4. Go to [localhost:30200](http://localhost:30200)
-<!-- 2. Install NPM packages
-   ```sh
-   npm install
-   ```
-1. Enter your API in `config.js`
-   ```js
-   const API_KEY = 'ENTER YOUR API';
-   ```
-2. Change git remote url to avoid accidental pushes to base project
-   ```sh
-   git remote set-url origin github_username/repo_name
-   git remote -v # confirm the changes
-   ``` -->
+5. Go to [localhost:30200](http://localhost:30200)
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
 
 
 <!-- USAGE EXAMPLES -->
-<!-- ## Usage
+# Usage
 
-Use this space to show useful examples of how a project can be used. Additional screenshots, code examples and demos work well in this space. You may also link to more resources.
+## Root Folders
 
-_For more examples, please refer to the [Documentation](https://example.com)_ -->
+![Root Folders][screenshot-root-folders]
+
+**Root Folders** can be found in the ***Settings page***. It will be the folders where your items will be downloaded.
+
+All the downloads will be in the `/Media` folder in the container, you must first add a Root Folder before you can download any item.
+
+You can add a Root Folder by writing its name in the input bar, it will create a folder in `/Media` based on the name you entered, you can also enter folders with subfolders like `Music/my_sub_folder`. Just click the + button to add it.
+
+You can also see and choose a folder that already exists by clicking on **Choose from /Media** and navigate to the folder you want to **select**.
+
+![Select Path for Root Folder ][screenshot-select-path]
+
+Once you added a path (you can add multiple paths), you must select a default path where items will be downloaded by default, if no other Root Folder is assigned to them.
+
+![Set Default Root Folder][screenshot-set-default]
+
+
+## Manage Playlists
+
+To add a playlist, click on the menu at the bottom of the page and select the `+` button, past the url of the playlist you want to add.then click `Add item`.
+
+![Add Playlist][add-playlist]
+
+You can `sort the playlists` by clicking on the **button next to the one to add a Playlist**
+
+
+
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
@@ -241,7 +273,6 @@ Project Link: [https://github.com/SayWess/Musicarr](https://github.com/SayWess/M
 [license-url]: https://github.com/SayWess/musicarr/blob/master/LICENSE.txt
 [linkedin-shield]: https://img.shields.io/badge/-LinkedIn-black.svg?style=for-the-badge&logo=linkedin&colorB=555
 [linkedin-url]: https://linkedin.com/in/linkedin_username
-[product-screenshot]: images/musicarr_interface.png
 [Next.js]: https://img.shields.io/badge/next.js-000000?style=for-the-badge&logo=nextdotjs&logoColor=white
 [Next-url]: https://nextjs.org/
 [React.js]: https://img.shields.io/badge/React-20232A?style=for-the-badge&logo=react&logoColor=61DAFB
@@ -258,5 +289,22 @@ Project Link: [https://github.com/SayWess/Musicarr](https://github.com/SayWess/M
 [Bootstrap-url]: https://getbootstrap.com
 [JQuery.com]: https://img.shields.io/badge/jQuery-0769AD?style=for-the-badge&logo=jquery&logoColor=white
 [JQuery-url]: https://jquery.com 
+[TailwindCSS.com]: https://img.shields.io/badge/Tailwind_CSS-grey?style=for-the-badge&logo=tailwind-css&logoColor=38B2AC
+[TailwindCSS-url]: https://tailwindcss.com/
 [TypeScript.org]: https://shields.io/badge/TypeScript-3178C6?logo=TypeScript&logoColor=FFF&style=flat-square
 [TypeScript-url]: https://www.typescriptlang.org/
+[FastAPI.com]: https://img.shields.io/badge/FastAPI-005571?style=for-the-badge&logo=fastapi
+[FastAPI-url]: https://fastapi.tiangolo.com/
+[SQLAlchemy.org]: https://img.shields.io/badge/sqlalchemy-D71F00?style=for-the-badge&logo=sqlalchemy&logoColor=white
+[SQLAlchemy-url]: https://www.sqlalchemy.org/
+<!-- [Alembic.org]: https://img.shields.io/badge/sqlalchemy-D71F00?style=for-the-badge&logo=sqlalchemy&logoColor=white -->
+[Alembic-url]: https://alembic.sqlalchemy.org/en/latest/
+[PostgreSQL.org]: https://img.shields.io/badge/postgresql-4169e1?style=for-the-badge&logo=postgresql&logoColor=white
+[PostgreSQL-url]: https://www.postgresql.org/
+[Docker-url]: https://docs.docker.com/engine/install/#supported-platforms
+[google-cloud-url]: https://console.cloud.google.com/
+[product-screenshot]: images/musicarr_interface.png
+[screenshot-root-folders]: images/musicarr_root_folders.png
+[screenshot-select-path]: images/musicarr_select_path.png
+[screenshot-set-default]: images/musicarr_set_default.png
+[add-playlist]: images/musicarr_add_playlist.png
