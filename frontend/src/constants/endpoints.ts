@@ -8,6 +8,7 @@ const endpointPlaylists = endpointApi + "/playlists";
 const endpointVideos = endpointApi + "/videos";
 const endpointUploaders = endpointApi + "/uploaders";
 const endpointPaths = endpointApi + "/paths";
+const endpointManageData = endpointApi + "/manage_data";
 
 // WebSocket endpoints
 const endpointWebSocket = process.env.NEXT_PUBLIC_WS_URL || "/ws";
@@ -27,6 +28,7 @@ export {
   endpointPaths,
   endpointUploaders,
   endpointUploadersAvatar,
+  endpointManageData,
   endpointWebSocket,
   endpointWebSocketPlaylists,
   endpointWebSocketVideos,
