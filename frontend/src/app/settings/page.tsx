@@ -7,8 +7,8 @@ import { endpointPaths } from "@/constants/endpoints";
 import errorToast from "@/components/toasts/errorToast";
 import AddRootFolder from "@/components/settings/rootFolders/AddRootFolder";
 import ListRootFolder from "@/components/settings/rootFolders/ListRootFolders";
-import ExportIds from "@/components/settings/manage_items/export_ids";
-import ImportIds from "@/components/settings/manage_items/import_data";
+import ExportIds from "@/components/settings/manage_items/Export_ids";
+import ImportIds from "@/components/settings/manage_items/Import_data";
 
 interface PathItem {
   path: string;

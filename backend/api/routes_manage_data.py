@@ -61,10 +61,11 @@ async def export_data(db: AsyncSession = Depends(get_db)):
         filename=file_name,
     )
 
+
 @router.post("/upload")
 async def upload_n_downloadfile(file: UploadFile, db: AsyncSession = Depends(get_db)):
     if file.content_type != "application/json":
-        raise HTTPException(400,detail="Invalid document type")
+        raise HTTPException(400,detail="Invalid document type. Expected a .json file")
     else:
         json_data = json.loads(file.file.read())
         if "playlists" not in json_data or "videos" not in json_data:

@@ -2,7 +2,6 @@
 
 import UploadFile from "@/components/form/uploadFile";
 import { endpointManageData } from "@/constants/endpoints";
-import { Download } from "lucide-react";
 
 export default function ImportIds() {
 
