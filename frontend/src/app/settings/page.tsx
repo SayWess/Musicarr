@@ -7,6 +7,8 @@ import { endpointPaths } from "@/constants/endpoints";
 import errorToast from "@/components/toasts/errorToast";
 import AddRootFolder from "@/components/settings/rootFolders/AddRootFolder";
 import ListRootFolder from "@/components/settings/rootFolders/ListRootFolders";
+import ExportIds from "@/components/settings/manage_items/Export_ids";
+import ImportIds from "@/components/settings/manage_items/Import_data";
 
 interface PathItem {
   path: string;
@@ -47,6 +49,9 @@ export default function Settings() {
 
           <AddRootFolder onPathAdded={fetchPaths} />
 
+          <ExportIds />
+
+          <ImportIds />
         </div>
       )}
     </div>

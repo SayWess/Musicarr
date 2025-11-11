@@ -21,7 +21,7 @@ export default function AddRootFolder({ onPathAdded }: Props) {
   const [loadingMounts, setLoadingMounts] = useState(false);
 
   const backdropRef = useRef<HTMLDivElement>(null);
-  
+
   const handleAddPath = async () => {
     if (!newPathName.trim()) {
       errorToast("Path name cannot be empty.");
@@ -104,7 +104,7 @@ export default function AddRootFolder({ onPathAdded }: Props) {
         {showMountModal && (
           <motion.div
             ref={backdropRef}
-        onClick={handleBackdropClick}
+            onClick={handleBackdropClick}
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
@@ -148,7 +148,7 @@ export default function AddRootFolder({ onPathAdded }: Props) {
                     return (
                       <li key={p}>
                         <button
-                          onClick={() => fetchMountPaths(p.split('Media/').slice(1).join("/"))}
+                          onClick={() => fetchMountPaths(p.split("Media/").slice(1).join("/"))}
                           className="w-full text-left bg-gray-800 hover:bg-gray-700 p-3 rounded-lg font-mono flex justify-between items-center"
                         >
                           <span>{name}</span>
