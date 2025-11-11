@@ -8,7 +8,7 @@ from database.models import RootFolder
 from database.database import get_db  # your FastAPI DB session dependency
 import os
 from utils.sanitize import is_valid_folder_name, is_valid_folder_path
-from utils.constants import MNT_PATH
+from utils.constants import MEDIA_STORAGE_PATH
 
 
 router = APIRouter()
@@ -45,8 +45,8 @@ def list_folders(base_path: str) -> list[str]:
 
 @router.get("/", response_model=list[PathItem])
 async def get_paths(db: AsyncSession = Depends(get_db)):
-    if not os.path.exists(MNT_PATH):
-        os.makedirs(MNT_PATH)
+    if not os.path.exists(MEDIA_STORAGE_PATH):
+        os.makedirs(MEDIA_STORAGE_PATH)
         
     db_paths = await db.execute(select(RootFolder).order_by(RootFolder.path))
     db_paths = db_paths.scalars().all()
@@ -69,7 +69,7 @@ async def add_path(req: NewPathRequest, db: AsyncSession = Depends(get_db)):
     if not is_valid_folder_path(req.path):
         return {"error": "Invalid path format"}
 
-    full_path = os.path.join(MNT_PATH, normalized_path)
+    full_path = os.path.join(MEDIA_STORAGE_PATH, normalized_path)
     print(f"Adding path: {full_path}")
 
     # Create the directory if it doesn't exist
@@ -131,7 +131,7 @@ async def delete_root_folder(
     # Optionally delete the folder and its contents
     if delete_files:
         print(f"Deleting folder from disk: {path}")
-        if os.path.exists(path) and os.path.isdir(path) and not os.path.islink(path) and path.startswith(MNT_PATH):
+        if os.path.exists(path) and os.path.isdir(path) and not os.path.islink(path) and path.startswith(MEDIA_STORAGE_PATH):
             try:
                 shutil.rmtree(path)
             except Exception as e:
@@ -157,10 +157,10 @@ async def get_mnt_folders(path: str = Query("", description="Relative subpath un
         raise HTTPException(status_code=400, detail="Invalid path")
 
     print(f"Received path: {relative_path}")
-    abs_path = os.path.join(MNT_PATH, relative_path)
+    abs_path = os.path.join(MEDIA_STORAGE_PATH, relative_path)
     
     print(f"Listing folders in: {abs_path}")
-    if not abs_path.startswith(MNT_PATH) or not os.path.isdir(abs_path):
+    if not abs_path.startswith(MEDIA_STORAGE_PATH) or not os.path.isdir(abs_path):
         raise HTTPException(status_code=404, detail="Path does not exist or is not a directory")
 
     try:

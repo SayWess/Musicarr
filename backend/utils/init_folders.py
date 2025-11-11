@@ -1,5 +1,5 @@
 import os
-from utils.constants import MNT_PATH
+from utils.constants import MEDIA_STORAGE_PATH, METADATA_STORAGE_PATH
 
 
 def init_folders():
@@ -7,7 +7,8 @@ def init_folders():
     Initialize the necessary folders for the application.
     """
     folders = [
-        MNT_PATH + "/downloads",
+        MEDIA_STORAGE_PATH + "/downloads",
+        METADATA_STORAGE_PATH + "/avatars"
     ]
 
     for folder in folders:

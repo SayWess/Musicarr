@@ -7,7 +7,7 @@ services:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: mysecretpassword
     volumes:
-      - postgres_data:/var/lib/postgresql/data
+      - ${POSTGRES_STORAGE:-musicarr_postgres_data}:/var/lib/postgresql/data
     networks:
       - musicarr-network
     restart: unless-stopped
@@ -29,8 +29,8 @@ services:
       context: ./backend
       dockerfile: Dockerfile
     volumes:
-      - musicarr_storage:/Media/downloads
-      - metadata_storage:/app/metadata
+      - ${MEDIA_STORAGE:-musicarr_metadata_storage}:/Media
+      - ${METADATA_STORAGE:-musicarr_storage}:/app/metadata
     environment:
       DATABASE_URL: ${DATABASE_URL}
       DATABASE_URL_FOR_ALEMBIC: ${DATABASE_URL_FOR_ALEMBIC}
@@ -63,6 +63,6 @@ networks:
     driver: bridge
 
 volumes:
-  postgres_data:
+  musicarr_postgres_data:
   musicarr_storage:
-  metadata_storage:
+  musicarr_metadata_storage:

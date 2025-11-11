@@ -4,7 +4,7 @@ from sqlalchemy.dialects.postgresql import UUID
 import uuid
 from database import Base
 from enum import Enum as PyEnum
-from utils.constants import MNT_PATH 
+from utils.constants import MEDIA_STORAGE_PATH 
 
 
 # Download State Enum
@@ -53,7 +53,7 @@ class Item(Base):
     description = Column(String, nullable=True)
     thumbnail = Column(String, nullable=True)
     upload_date = Column(String, nullable=True)
-    folder = Column(String, default=MNT_PATH)  # Default storage folder
+    folder = Column(String, default=MEDIA_STORAGE_PATH)  # Default storage folder
     created_at = Column(DateTime(timezone=True), server_default=func.now())  # Date de création automatique
 
     @declared_attr

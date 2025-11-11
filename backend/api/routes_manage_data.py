@@ -63,7 +63,7 @@ async def export_data(db: AsyncSession = Depends(get_db)):
 
 
 @router.post("/upload")
-async def upload_n_downloadfile(file: UploadFile, db: AsyncSession = Depends(get_db)):
+async def upload_app_data(file: UploadFile, db: AsyncSession = Depends(get_db)):
     if file.content_type != "application/json":
         raise HTTPException(400,detail="Invalid document type. Expected a .json file")
     else:

@@ -5,7 +5,7 @@ from sqlalchemy.future import select
 from websocket_manager import ws_manager
 from database.database import SessionLocal
 
-from utils.constants import MNT_PATH
+from utils.constants import MEDIA_STORAGE_PATH
 from utils.sanitize import sanitize_title
 from utils.download_uploader_avatar import download_uploader_avatar
 from utils.youtube_api import get_playlist_info, get_playlist_items, get_video_details
@@ -107,7 +107,7 @@ async def fetch_and_store_playlist_info(playlist_id, db: AsyncSession):
         root_folder = result.scalars().first()
         if not root_folder:
             root_folder = RootFolder(
-                path=MNT_PATH,
+                path=MEDIA_STORAGE_PATH,
                 is_default=True
             )
             db.add(root_folder)
