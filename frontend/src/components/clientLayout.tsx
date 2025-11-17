@@ -20,9 +20,9 @@ export default function ClientLayout({ children }: ClientLayoutProps) {
       <Sidebar onSearchClick={() => {
           // Open the overlay when sidebar search button is clicked
           searchRef.current?.openSearch?.();
-        }}/> {/* Sidebar Navigation, at bottom screen for mobile */}
+        }}/>
 
-      <Toaster /> {/* Toast notifications */}
+      <Toaster />
 
       <MusicSearchOverlay ref={searchRef} />
       

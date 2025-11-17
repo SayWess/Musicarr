@@ -45,6 +45,7 @@ pyparsing==3.2.3
 python-dotenv==1.1.0
 python-multipart==0.0.20
 PyYAML==6.0.2
+RapidFuzz==3.14.3
 requests==2.32.4
 rich==13.9.4
 rich-toolkit==0.13.2
@@ -63,3 +64,4 @@ uvloop==0.21.0
 watchfiles==1.0.4
 websockets==15.0.1
 yt-dlp==2025.3.31.214356.dev0
+ytmusicapi==1.11.1
