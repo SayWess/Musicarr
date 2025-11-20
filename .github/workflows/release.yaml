@@ -6,8 +6,8 @@ on:
       - "v*.*.*"
 
 env:
-  IMAGE_FRONTEND_NAME: ghcr.io/${{ github.repository_owner.toLowerCase() }}/musicarr-frontend
-  IMAGE_BACKEND_NAME: ghcr.io/${{ github.repository_owner..toLowerCase() }}/musicarr-backend
+  IMAGE_FRONTEND_NAME: ghcr.io/saywess/musicarr-frontend
+  IMAGE_BACKEND_NAME: ghcr.io/saywess/musicarr-backend
 
 jobs:
   build-and-push:
