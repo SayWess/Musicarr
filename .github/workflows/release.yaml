@@ -46,7 +46,9 @@ jobs:
             ${{ env.IMAGE_FRONTEND_NAME }}:${{ steps.vars.outputs.VERSION }}
           cache-from: type=registry,ref=${{ env.IMAGE_FRONTEND_NAME }}:buildcache
           cache-to: type=registry,ref=${{ env.IMAGE_FRONTEND_NAME }}:buildcache,mode=max
-
+        env:
+          DOCKER_BUILDKIT: 1
+          BUILDKIT_DRIVER: docker-container
 
       - name: Build & push backend
         uses: docker/build-push-action@v6
@@ -59,6 +61,9 @@ jobs:
             ${{ env.IMAGE_BACKEND_NAME }}:${{ steps.vars.outputs.VERSION }}
           cache-from: type=registry,ref=${{ env.IMAGE_BACKEND_NAME }}:buildcache
           cache-to: type=registry,ref=${{ env.IMAGE_BACKEND_NAME }}:buildcache,mode=max
+        env:
+          DOCKER_BUILDKIT: 1
+          BUILDKIT_DRIVER: docker-container
 
       - name: Pin production compose to release version
         run: |
