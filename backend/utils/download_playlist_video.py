@@ -7,7 +7,7 @@ from typing import cast
 def get_output_path(playlist: Playlist):
     # return f"{playlist.folder}/%(uploader)s/{playlist.title}/%(title)s.%(ext)s"
     if not playlist.uploader:
-        return f"{playlist.folder}/unknown_uploader/{playlist.title}/%(title)s.%(ext)s"
+        return f"{playlist.folder}/{playlist.title}/%(title)s.%(ext)s"
     
     uploader = cast(Uploader, playlist.uploader)
     uploader_name = cast(str, uploader.name).replace("/", "-")
@@ -22,6 +22,7 @@ async def start_download_video(playlist: Playlist, video: Video):
             "--newline",
             "--no-playlist",  # just in case
             "--embed-thumbnail",
+            "--embed-metadata",
             "-o", get_output_path(playlist),
         ]
 
