@@ -73,7 +73,7 @@ jobs:
 
       - name: Zip production deployment files
         run: |
-          zip -j musicarr-deploy-${{ steps.vars.outputs.VERSION }}.zip docker-compose.prod.yaml nginx.conf 
+          zip -j musicarr-${{ steps.vars.outputs.VERSION }}.zip docker-compose.prod.yaml nginx.conf 
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
