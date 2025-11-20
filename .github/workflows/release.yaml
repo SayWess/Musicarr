@@ -49,8 +49,8 @@ jobs:
           tags: |
             ${{ env.IMAGE_FRONTEND_NAME }}:latest
             ${{ env.IMAGE_FRONTEND_NAME }}:${{ steps.vars.outputs.VERSION }}
-          cache-from: type=registry,ref=${{ env.IMAGE_FRONTEND_NAME }}:buildcache
-          cache-to: type=registry,ref=${{ env.IMAGE_FRONTEND_NAME }}:buildcache,mode=max
+          # cache-from: type=registry,ref=${{ env.IMAGE_FRONTEND_NAME }}:buildcache
+          # cache-to: type=registry,ref=${{ env.IMAGE_FRONTEND_NAME }}:buildcache,mode=max
 
       - name: Build & push backend
         uses: docker/build-push-action@v6
@@ -61,19 +61,19 @@ jobs:
           tags: |
             ${{ env.IMAGE_BACKEND_NAME }}:latest
             ${{ env.IMAGE_BACKEND_NAME }}:${{ steps.vars.outputs.VERSION }}
-          cache-from: type=registry,ref=${{ env.IMAGE_BACKEND_NAME }}:buildcache
-          cache-to: type=registry,ref=${{ env.IMAGE_BACKEND_NAME }}:buildcache,mode=max
+          # cache-from: type=registry,ref=${{ env.IMAGE_BACKEND_NAME }}:buildcache
+          # cache-to: type=registry,ref=${{ env.IMAGE_BACKEND_NAME }}:buildcache,mode=max
 
       - name: Pin production compose to release version
         run: |
           cp docker-compose.prod.yaml docker-compose.prod.tmp.yaml
           sed -i "s|musicarr-frontend:latest|musicarr-frontend:${{ steps.vars.outputs.VERSION }}|g" docker-compose.prod.tmp.yaml
           sed -i "s|musicarr-backend:latest|musicarr-backend:${{ steps.vars.outputs.VERSION }}|g" docker-compose.prod.tmp.yaml
-          mv docker-compose.prod.tmp.yaml docker-compose.prod.yaml
+          mv docker-compose.prod.tmp.yaml docker-compose.yaml
 
       - name: Zip production deployment files
         run: |
-          zip -j musicarr-${{ steps.vars.outputs.VERSION }}.zip docker-compose.prod.yaml nginx.conf 
+          zip -j musicarr-${{ steps.vars.outputs.VERSION }}.zip docker-compose.yaml nginx.conf 
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
