@@ -42,10 +42,10 @@ jobs:
           target: production   
           push: true
           tags: |
-            ${{ IMAGE_FRONTEND_NAME }}:latest
-            ${{ IMAGE_FRONTEND_NAME }}:${{ steps.vars.outputs.VERSION }}
-          cache-from: type=registry,ref=${{ IMAGE_FRONTEND_NAME }}:buildcache
-          cache-to: type=registry,ref=${{ IMAGE_FRONTEND_NAME }}:buildcache,mode=max
+            ${{ env.IMAGE_FRONTEND_NAME }}:latest
+            ${{ env.IMAGE_FRONTEND_NAME }}:${{ steps.vars.outputs.VERSION }}
+          cache-from: type=registry,ref=${{ env.IMAGE_FRONTEND_NAME }}:buildcache
+          cache-to: type=registry,ref=${{ env.IMAGE_FRONTEND_NAME }}:buildcache,mode=max
 
 
       - name: Build & push backend
@@ -55,10 +55,10 @@ jobs:
           file: ./backend/Dockerfile
           push: true
           tags: |
-            ${{ IMAGE_BACKEND_NAME }}:latest
-            ${{ IMAGE_BACKEND_NAME }}:${{ steps.vars.outputs.VERSION }}
-          cache-from: type=registry,ref=${{ IMAGE_BACKEND_NAME }}:buildcache
-          cache-to: type=registry,ref=${{ IMAGE_BACKEND_NAME }}:buildcache,mode=max
+            ${{ env.IMAGE_BACKEND_NAME }}:latest
+            ${{ env.IMAGE_BACKEND_NAME }}:${{ steps.vars.outputs.VERSION }}
+          cache-from: type=registry,ref=${{ env.IMAGE_BACKEND_NAME }}:buildcache
+          cache-to: type=registry,ref=${{ env.IMAGE_BACKEND_NAME }}:buildcache,mode=max
 
       - name: Pin production compose to release version
         run: |
