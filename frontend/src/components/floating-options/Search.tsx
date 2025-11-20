@@ -173,6 +173,8 @@ const MusicSearchOverlay = forwardRef<MusicSearchOverlayHandle>((_, ref) => {
       "
         >
           <option value="all">All</option>
+          <option value="video">Video</option>
+          <option value="playlist">Playlist</option>
           {source === "ytmusic" ? (
             <>
               <option value="song">Song</option>
@@ -180,11 +182,7 @@ const MusicSearchOverlay = forwardRef<MusicSearchOverlayHandle>((_, ref) => {
               <option value="artist">Artist</option>
             </>
           ) : (
-            <>
-              <option value="video">Video</option>
-              <option value="playlist">Playlist</option>
-              <option value="channel">Channel</option>
-            </>
+            <option value="channel">Channel</option>
           )}
         </select>
 
