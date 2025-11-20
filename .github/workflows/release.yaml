@@ -51,9 +51,6 @@ jobs:
             ${{ env.IMAGE_FRONTEND_NAME }}:${{ steps.vars.outputs.VERSION }}
           cache-from: type=registry,ref=${{ env.IMAGE_FRONTEND_NAME }}:buildcache
           cache-to: type=registry,ref=${{ env.IMAGE_FRONTEND_NAME }}:buildcache,mode=max
-        env:
-          DOCKER_BUILDKIT: 1
-          BUILDKIT_DRIVER: docker-container
 
       - name: Build & push backend
         uses: docker/build-push-action@v6
@@ -66,9 +63,6 @@ jobs:
             ${{ env.IMAGE_BACKEND_NAME }}:${{ steps.vars.outputs.VERSION }}
           cache-from: type=registry,ref=${{ env.IMAGE_BACKEND_NAME }}:buildcache
           cache-to: type=registry,ref=${{ env.IMAGE_BACKEND_NAME }}:buildcache,mode=max
-        env:
-          DOCKER_BUILDKIT: 1
-          BUILDKIT_DRIVER: docker-container
 
       - name: Pin production compose to release version
         run: |
@@ -81,15 +75,10 @@ jobs:
         run: |
           zip -j musicarr-deploy-${{ steps.vars.outputs.VERSION }}.zip docker-compose.prod.yaml nginx.conf 
 
-      - name: Zip source code
-        run: |
-          zip -r musicarr-source-${{ steps.vars.outputs.VERSION }}.zip .
-
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
           files: |
-            musicarr-deploy-${{ steps.vars.outputs.VERSION }}.zip
-            musicarr-source-${{ steps.vars.outputs.VERSION }}.zip
+            musicarr-${{ steps.vars.outputs.VERSION }}.zip
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
