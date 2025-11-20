@@ -119,7 +119,7 @@ const MusicSearchOverlay = forwardRef<MusicSearchOverlayHandle>((_, ref) => {
       {results.length !== 0 && (
         <div
           className={`pointer-events-auto w-full max-w-md max-h-[75vh] overflow-y-auto mb-5 bg-gray-800 rounded-lg shadow-lg p-2 space-y-1 transition-all duration-300 ease-in-out transform ${
-            open ? "opacity-100 scale-100" : "opacity-0 scale-95"
+            open ? "opacity-100 scale-100" : "opacity-0 scale-0"
           }`}
         >
           {results.map((r, i) => (
