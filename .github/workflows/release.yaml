@@ -1,0 +1,85 @@
+name: Release Docker Images
+
+on:
+  push:
+    tags:
+      - "v*.*.*"
+
+env:
+  IMAGE_FRONTEND_NAME: ghcr.io/${{ github.repository_owner }}/musicarr-frontend
+  IMAGE_BACKEND_NAME: ghcr.io/${{ github.repository_owner }}/musicarr-backend
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: write
+      packages: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # Do not get extra git branches to save time
+        
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract version
+        id: vars
+        run: echo "VERSION=${GITHUB_REF_NAME}" >> $GITHUB_OUTPUT
+
+      - name: Build & push frontend
+        uses: docker/build-push-action@v6
+        with:
+          context: ./frontend
+          file: ./frontend/Dockerfile
+          target: production   
+          push: true
+          tags: |
+            ${{ IMAGE_FRONTEND_NAME }}:latest
+            ${{ IMAGE_FRONTEND_NAME }}:${{ steps.vars.outputs.VERSION }}
+          cache-from: type=registry,ref=${{ IMAGE_FRONTEND_NAME }}:buildcache
+          cache-to: type=registry,ref=${{ IMAGE_FRONTEND_NAME }}:buildcache,mode=max
+
+
+      - name: Build & push backend
+        uses: docker/build-push-action@v6
+        with:
+          context: ./backend
+          file: ./backend/Dockerfile
+          push: true
+          tags: |
+            ${{ IMAGE_BACKEND_NAME }}:latest
+            ${{ IMAGE_BACKEND_NAME }}:${{ steps.vars.outputs.VERSION }}
+          cache-from: type=registry,ref=${{ IMAGE_BACKEND_NAME }}:buildcache
+          cache-to: type=registry,ref=${{ IMAGE_BACKEND_NAME }}:buildcache,mode=max
+
+      - name: Pin production compose to release version
+        run: |
+          cp docker-compose.prod.yaml docker-compose.prod.tmp.yaml
+          sed -i "s|musicarr-frontend:latest|musicarr-frontend:${{ steps.vars.outputs.VERSION }}|g" docker-compose.prod.tmp.yaml
+          sed -i "s|musicarr-backend:latest|musicarr-backend:${{ steps.vars.outputs.VERSION }}|g" docker-compose.prod.tmp.yaml
+          mv docker-compose.prod.tmp.yaml docker-compose.prod.yaml
+
+      - name: Zip production deployment files
+        run: |
+          zip -j musicarr-deploy-${{ steps.vars.outputs.VERSION }}.zip docker-compose.prod.yaml nginx.conf 
+
+      - name: Zip source code
+        run: |
+          zip -r musicarr-source-${{ steps.vars.outputs.VERSION }}.zip .
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            musicarr-deploy-${{ steps.vars.outputs.VERSION }}.zip
+            musicarr-source-${{ steps.vars.outputs.VERSION }}.zip
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

@@ -1,0 +1,63 @@
+services:
+  musicarr-postgres:
+    image: postgres:latest
+    container_name: musicarr-postgres
+    environment:
+      POSTGRES_DB: musicarr
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: mysecretpassword
+    volumes:
+      - ${POSTGRES_STORAGE:-musicarr_postgres_data}:/var/lib/postgresql/data
+    networks:
+      - musicarr-network
+    restart: unless-stopped
+
+  musicarr-frontend:
+    container_name: musicarr-frontend
+    image: ghcr.io/SayWess/musicarr-frontend:latest
+    networks:
+      - musicarr-network
+    depends_on:
+      - musicarr-postgres
+    restart: unless-stopped
+
+  musicarr-backend:
+    image: ghcr.io/SayWess/musicarr-backend:latest
+    volumes:
+      - ${MEDIA_STORAGE:-musicarr_metadata_storage}:/Media
+      - ${METADATA_STORAGE:-musicarr_storage}:/app/metadata
+    environment:
+      DATABASE_URL: ${DATABASE_URL}
+      DATABASE_URL_FOR_ALEMBIC: ${DATABASE_URL_FOR_ALEMBIC}
+      PYTHONPATH: /app
+      YOUTUBE_API_KEY: ${YOUTUBE_API_KEY}
+    container_name: musicarr-backend
+    networks:
+      - musicarr-network
+    depends_on:
+      - musicarr-postgres
+    restart: no
+
+  nginx:
+    image: nginx:latest
+    container_name: musicarr-nginx
+    ports:
+      - "30200:80" # Change the desired port here <your_port>:80
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+    networks:
+      - musicarr-network
+    depends_on:
+      - musicarr-postgres
+      - musicarr-frontend
+      - musicarr-backend
+    restart: unless-stopped
+
+networks:
+  musicarr-network:
+    driver: bridge
+
+volumes:
+  musicarr_postgres_data:
+  musicarr_storage:
+  musicarr_metadata_storage:
