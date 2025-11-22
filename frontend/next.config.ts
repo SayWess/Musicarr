@@ -1,5 +1,6 @@
 import type { NextConfig } from "next";
 
+
 const nextConfig: NextConfig = {
   images: {
     remotePatterns: [
@@ -9,8 +10,12 @@ const nextConfig: NextConfig = {
       },
       {
         protocol: "http",
-        hostname: process.env.NEXT_DEVELOPMENT_HOST || "musicarr-backend",
+        hostname: "localhost",
       },
+      {
+        protocol: "http",
+        hostname: "musicarr-backend",
+      }
     ], // Add domains for youtube images
   },
   // reactStrictMode: false // Uncomment this line to disable React's strict mode and prevent double rendering, but not recommended in development
@@ -20,12 +25,7 @@ const nextConfig: NextConfig = {
     ignoreDuringBuilds: true,
   },
 
-  allowedDevOrigins: [
-    process.env.NEXT_DEVELOPMENT_HOST || 'localhost',
-  ],
-
   output: 'standalone',
-
 };
 
 export default nextConfig;

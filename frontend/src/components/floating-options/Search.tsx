@@ -79,18 +79,8 @@ const MusicSearchOverlay = forwardRef<MusicSearchOverlayHandle>((_, ref) => {
       return;
     }
 
-    const url = new URL(`${endpointSearchMusic}/search`);
-
-    url.searchParams.set("query", q);
-    url.searchParams.set("source", source);
-    url.searchParams.set("type_filter", typeFilter);
-
-    if (channelFilter.trim().length > 0) {
-      url.searchParams.set("channel_name", channelFilter);
-    }
-
     try {
-      const res = await fetch(url.toString());
+      const res = await fetch(`${endpointSearchMusic}/search?query=${encodeURIComponent(q)}&source=${source}&type_filter=${typeFilter}${channelFilter.trim().length > 0 ? `&channel_name=${encodeURIComponent(channelFilter)}` : ''}`);
       const data = await res.json();
       setResults(data || []);
     } catch (err) {
