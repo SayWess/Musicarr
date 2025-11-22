@@ -14,7 +14,7 @@ services:
 
   musicarr-frontend:
     container_name: musicarr-frontend
-    image: ghcr.io/SayWess/musicarr-frontend:latest
+    image: ghcr.io/saywess/musicarr-frontend:latest
     networks:
       - musicarr-network
     depends_on:
@@ -22,7 +22,7 @@ services:
     restart: unless-stopped
 
   musicarr-backend:
-    image: ghcr.io/SayWess/musicarr-backend:latest
+    image: ghcr.io/saywess/musicarr-backend:latest
     volumes:
       - ${MEDIA_STORAGE:-musicarr_metadata_storage}:/Media
       - ${METADATA_STORAGE:-musicarr_storage}:/app/metadata

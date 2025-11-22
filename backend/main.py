@@ -7,6 +7,7 @@ from apscheduler.triggers.cron import CronTrigger
 from utils.update_playlists import update_playlists_downloads_job, update_playlists_info_job
 from contextlib import asynccontextmanager
 from utils.init_folders import init_folders
+from utils.constants import METADATA_STORAGE_PATH
 
 
 init_folders()  # Initialize necessary folders
@@ -72,4 +73,4 @@ app.include_router(api_router, prefix="/api")
 
 from fastapi.staticfiles import StaticFiles
 
-app.mount("/metadata", StaticFiles(directory="metadata"), name="metadata")
+app.mount("/metadata", StaticFiles(directory=METADATA_STORAGE_PATH), name="metadata")

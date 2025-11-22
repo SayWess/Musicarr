@@ -1,5 +1,6 @@
 import type { NextConfig } from "next";
 
+
 const nextConfig: NextConfig = {
   images: {
     remotePatterns: [
@@ -20,12 +21,7 @@ const nextConfig: NextConfig = {
     ignoreDuringBuilds: true,
   },
 
-  allowedDevOrigins: [
-    process.env.NEXT_DEVELOPMENT_HOST || 'localhost',
-  ],
-
-  output: 'standalone',
-
+  output: "standalone",
 };
 
 export default nextConfig;

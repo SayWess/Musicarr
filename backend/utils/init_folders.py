@@ -1,5 +1,5 @@
 import os
-from utils.constants import MEDIA_STORAGE_PATH, METADATA_STORAGE_PATH
+from utils.constants import MEDIA_STORAGE_PATH, METADATA_STORAGE_PATH, UPLOADS_PATH
 
 
 def init_folders():
@@ -8,7 +8,8 @@ def init_folders():
     """
     folders = [
         MEDIA_STORAGE_PATH + "/downloads",
-        METADATA_STORAGE_PATH + "/avatars"
+        METADATA_STORAGE_PATH + "/avatars",
+        UPLOADS_PATH
     ]
 
     for folder in folders:
