@@ -7,7 +7,7 @@ services:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: mysecretpassword
     volumes:
-      - ${POSTGRES_STORAGE:-musicarr_postgres_data}:/var/lib/postgresql/data
+      - ${POSTGRES_STORAGE:-musicarr_postgres_data}:/var/lib/postgresql
     networks:
       - musicarr-network
     restart: unless-stopped
