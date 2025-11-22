@@ -10,12 +10,8 @@ const nextConfig: NextConfig = {
       },
       {
         protocol: "http",
-        hostname: "localhost",
+        hostname: process.env.NEXT_DEVELOPMENT_HOST || "musicarr-backend",
       },
-      {
-        protocol: "http",
-        hostname: "musicarr-backend",
-      }
     ], // Add domains for youtube images
   },
   // reactStrictMode: false // Uncomment this line to disable React's strict mode and prevent double rendering, but not recommended in development
@@ -25,7 +21,7 @@ const nextConfig: NextConfig = {
     ignoreDuringBuilds: true,
   },
 
-  output: 'standalone',
+  output: "standalone",
 };
 
 export default nextConfig;
