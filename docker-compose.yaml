@@ -18,8 +18,6 @@ services:
       context: ./frontend
       target: production
       dockerfile: Dockerfile
-    environment:
-      - API_URL=http://musicarr-backend # Name of the backend container
     networks:
       - musicarr-network
     depends_on:
