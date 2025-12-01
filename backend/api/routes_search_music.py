@@ -20,7 +20,7 @@ async def search(
     try:
         # ------------------- YOUTUBE -------------------
         if source == "youtube":
-            results = await search_youtube(query)
+            results = await search_youtube(query, type_filter)
 
             # Optional fuzzy channel filtering
             if channel_name:
@@ -39,7 +39,7 @@ async def search(
 
         # ------------------- YOUTUBE MUSIC -------------------
         if source == "ytmusic":
-            results = await search_youtube_music(query)
+            results = await search_youtube_music(query, filters=type_filter)
 
             if channel_name:
                 results = filter_music_by_channel_name(results, channel_name)
