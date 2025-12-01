@@ -5,7 +5,7 @@ import { Plus, Loader2, Download, X } from "lucide-react";
 import axios from "axios";
 import { endpointApi } from "@/constants/endpoints";
 import { extractYouTubeId } from "@/utils/extractYouTubeId";
-import { mutate } from "swr";
+// import { mutate } from "swr";
 import errorToast from "@/components/toasts/errorToast";
 import infoToast from "@/components/toasts/infoToast";
 

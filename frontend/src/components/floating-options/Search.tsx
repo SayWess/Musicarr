@@ -3,6 +3,7 @@
 import { useState, useImperativeHandle, forwardRef, useEffect, useRef } from "react";
 import { endpointSearchMusic } from "@/constants/endpoints";
 import { AddSearchItemButton } from "@/components/buttons/AddSearchedItem";
+import { useShortcut } from "@/utils/useKeyboard";
 
 export interface MusicSearchOverlayHandle {
   openSearch: () => void;
@@ -19,6 +20,22 @@ const MusicSearchOverlay = forwardRef<MusicSearchOverlayHandle>((_, ref) => {
   const [channelFilter, setChannelFilter] = useState("");
   const [mounted, setMounted] = useState(false);
   const searchTimeout = useRef<NodeJS.Timeout | null>(null);
+  const searchInputRef = useRef<HTMLInputElement>(null);
+
+  useShortcut("Tab", (e) => {
+    e.preventDefault()
+    e.stopPropagation()
+    setOpen((prev) => {
+      const next = !prev;
+      localStorage.setItem("musicSearchOpen", String(next));
+      return next;
+    });
+
+    // Focus the search bar AFTER it becomes visible
+    setTimeout(() => {
+      searchInputRef.current?.focus();
+    }, 0);
+  });
 
   // Expose openSearch() to parent
   useImperativeHandle(ref, () => ({
@@ -80,7 +97,13 @@ const MusicSearchOverlay = forwardRef<MusicSearchOverlayHandle>((_, ref) => {
     }
 
     try {
-      const res = await fetch(`${endpointSearchMusic}/search?query=${encodeURIComponent(q)}&source=${source}&type_filter=${typeFilter}${channelFilter.trim().length > 0 ? `&channel_name=${encodeURIComponent(channelFilter)}` : ''}`);
+      const res = await fetch(
+        `${endpointSearchMusic}/search?query=${encodeURIComponent(
+          q
+        )}&source=${source}&type_filter=${typeFilter}${
+          channelFilter.trim().length > 0 ? `&channel_name=${encodeURIComponent(channelFilter)}` : ""
+        }`
+      );
       const data = await res.json();
       setResults(data || []);
     } catch (err) {
@@ -196,6 +219,7 @@ const MusicSearchOverlay = forwardRef<MusicSearchOverlayHandle>((_, ref) => {
         style={{ transformOrigin: "center" }}
       >
         <input
+          ref={searchInputRef}
           type="text"
           value={query}
           onChange={(e) => handleSearch(e.target.value)}
