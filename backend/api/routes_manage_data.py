@@ -91,7 +91,7 @@ async def get_global_preferences( db: AsyncSession = Depends(get_db)):
     Returns:
         GlobalPreferences: The existing or newly created global preferences row.
     """
-    global_preferences = (await db.execute(select(GlobalPreferences).except_())).scalar_one_or_none()
+    global_preferences = (await db.execute(select(GlobalPreferences))).scalar_one_or_none()
     if not global_preferences:
         global_preferences = GlobalPreferences()
         db.add(global_preferences)
@@ -139,6 +139,7 @@ async def update_global_preferences(attributes_updated: dict, db: AsyncSession =
         HTTPException 400:
             - If a field name does not exist on the model.
     """
+    print(attributes_updated)
     global_preferences = (await db.execute(select(GlobalPreferences))).scalar_one_or_none()
     if not global_preferences:
         global_preferences = GlobalPreferences()
@@ -153,11 +154,7 @@ async def update_global_preferences(attributes_updated: dict, db: AsyncSession =
         column = mapper.columns[key]
 
         if isinstance(column.type, Boolean):
-            if value == "true":
-                value = True
-            elif value == "false":
-                value = False
-            else:
+            if value not in [True, False]:
                 raise HTTPException(400, detail=f"Invalid type for '{key}', expected bool or string bool")
             
         setattr(global_preferences, key, value)
