@@ -1,4 +1,4 @@
-from database.models import DownloadState, Playlist, RootFolder, Video, Uploader, PlaylistVideo  # Import your models
+from database.models import DownloadState, Playlist, RootFolder, Video, Uploader, PlaylistVideo, GlobalPreferences
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 
@@ -90,13 +90,27 @@ async def fetch_and_store_playlist_info(playlist_id, db: AsyncSession):
 
     last_published = max([video.get("upload_date") for video in playlist_info.get("entries", []) if video]) or None
 
+    preferences = await db.execute(select(GlobalPreferences))
+    preferences = preferences.scalar_one_or_none()
+    if not preferences:
+        preferences = GlobalPreferences()
+        db.add(preferences)
+        await db.flush()
+        await db.commit()
+
     if playlist:
-       # Update existing playlist
-        playlist.title = sanitize_title(playlist_info.get("title"))
-        playlist.description = playlist_info.get("description")
-        playlist.thumbnail = first_entry.get("thumbnail")
+        # Update existing playlist based on user preferences
+        if preferences:
+            if preferences.update_playlist_title:
+                playlist.title = sanitize_title(playlist_info.get("title"))
+            if preferences.update_playlist_description:
+                playlist.description = playlist_info.get("description")
+            if preferences.update_playlist_thumbnail:
+                playlist.thumbnail = first_entry.get("thumbnail")
+            if preferences.update_playlist_uploader:
+                playlist.uploader_id=uploader.id if uploader else None
+
         playlist.last_published = last_published
-        playlist.uploader_id=uploader.id if uploader else None
 
         print("Updated existing playlist:", playlist.title)
     

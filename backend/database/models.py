@@ -125,3 +125,17 @@ class RootFolder(Base):
     @declared_attr
     def __table_args__(cls):
         return (UniqueConstraint('path', name='uq_root_folders'),)
+
+class GlobalPreferences(Base):
+    __tablename__ = "global_preferences"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    update_playlist_title = Column(Boolean, default=True)
+    update_playlist_uploader = Column(Boolean, default=True)
+    update_playlist_description = Column(Boolean, default=True)
+    update_playlist_thumbnail = Column(Boolean, default=True)
+
+    update_video_title = Column(Boolean, default=True)
+    update_video_uploader = Column(Boolean, default=True)
+    update_video_description = Column(Boolean, default=True)
+    update_video_thumbnail = Column(Boolean, default=True)

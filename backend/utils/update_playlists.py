@@ -7,7 +7,7 @@ from utils.download_playlist import download_playlist
 
 
 async def update_playlists_info_task(db: AsyncSession):
-    """Task to update playlists."""
+    """Task to update playlists info."""
 
     playlists = await db.execute(select(Playlist))
     playlists = playlists.scalars().all()
@@ -28,7 +28,7 @@ async def update_playlists_info_job():
     print("Playlists info updated successfully.")
 
 async def update_playlists_downloads(db: AsyncSession):
-    """Task to update playlists."""
+    """Task to download new items in playlists."""
 
     playlists = await db.execute(select(Playlist).where(Playlist.check_every_day))
     playlists = playlists.scalars().all()
