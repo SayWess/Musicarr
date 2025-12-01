@@ -9,6 +9,7 @@ const endpointVideos = endpointApi + "/videos";
 const endpointUploaders = endpointApi + "/uploaders";
 const endpointPaths = endpointApi + "/paths";
 const endpointManageData = endpointApi + "/manage_data";
+const endpointGlobalPreferences = endpointManageData + "/global_preferences"
 const endpointSearchMusic = endpointApi + "/search_music"
 
 // WebSocket endpoints
@@ -30,6 +31,7 @@ export {
   endpointUploaders,
   endpointUploadersAvatar,
   endpointManageData,
+  endpointGlobalPreferences,
   endpointSearchMusic,
   endpointWebSocket,
   endpointWebSocketPlaylists,
