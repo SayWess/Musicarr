@@ -9,6 +9,7 @@ import AddRootFolder from "@/components/settings/rootFolders/AddRootFolder";
 import ListRootFolder from "@/components/settings/rootFolders/ListRootFolders";
 import ExportIds from "@/components/settings/manage_items/Export_ids";
 import ImportIds from "@/components/settings/manage_items/Import_data";
+import GlobalPreferences from "@/components/settings/global_preferences/Global_Preferences";
 
 interface PathItem {
   path: string;
@@ -17,7 +18,7 @@ interface PathItem {
 
 export default function Settings() {
   const [paths, setPaths] = useState<PathItem[]>([]);
-  const [loading, setLoading] = useState(true); 
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     setLoading(true);
@@ -52,6 +53,8 @@ export default function Settings() {
           <ExportIds />
 
           <ImportIds />
+
+          <GlobalPreferences />
         </div>
       )}
     </div>

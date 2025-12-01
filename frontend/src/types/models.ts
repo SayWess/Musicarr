@@ -77,5 +77,17 @@ interface VideoDetails {
   available: boolean;
 }
 
-export type { Playlist, Video, PlaylistDetails, VideoDetails, Uploader};
+interface GlobalPreferences {
+  update_playlist_title: boolean
+  update_playlist_uploader: boolean
+  update_playlist_description: boolean
+  update_playlist_thumbnai: boolean
+
+  update_video_title: boolean
+  update_video_uploader: boolean
+  update_video_description: boolean
+  update_video_thumbnail: boolean
+}
+
+export type { Playlist, Video, PlaylistDetails, VideoDetails, Uploader, GlobalPreferences};
 export { DownloadState, DownloadFormat, DownloadQuality };
