@@ -14,11 +14,11 @@ YTMUSIC = YTMusic()   # works without auth for search
 
 # ------------------------ YOUTUBE SEARCH ------------------------
 
-async def search_youtube(query: str, max_results=20):
+async def search_youtube(query: str, filters="videos,playlists,channels", max_results=20):
     req = YOUTUBE.search().list(
         q=query,
         part="snippet",
-        type="video,playlist,channel",
+        type=filters,
         maxResults=max_results
     )
     res = req.execute()
@@ -43,9 +43,13 @@ def filter_by_channel_name(results, channel_name: str):
 
 # ------------------------ YOUTUBE MUSIC SEARCH ------------------------
 
-async def search_youtube_music(query: str, max_results=20):
+async def search_youtube_music(query: str, filters="all", max_results=20):
     """YT Music search (songs, albums, videos depending on YTMusic result types)."""
-    results = YTMUSIC.search(query)
+    print(filters + "s" if filters != "all" else "")
+    results = YTMUSIC.search(
+        query=query,
+        filter=filters + "s" if filters != "all" else None
+        )
     return results[:max_results]
 
 
