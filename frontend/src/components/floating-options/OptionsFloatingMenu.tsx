@@ -54,7 +54,7 @@ export const OptionsFloatingMenu = ({ children }: OptionsFloatingMenuProps) => {
             transition={{ duration: 0.2 }}
             className="text-white rounded-lg shadow-lg gap-2 flex flex-row items-center"
           >
-            { children }
+            {children}
           </motion.div>
         )}
       </AnimatePresence>
