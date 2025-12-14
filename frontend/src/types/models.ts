@@ -54,6 +54,7 @@ interface PlaylistDetails {
   last_published: string;
   upload_date: string;
   folder: string;
+  download_path: string;
   thumbnail: string;
   check_every_day: boolean;
   default_format: DownloadFormat;

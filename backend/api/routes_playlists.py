@@ -42,7 +42,6 @@ async def get_playlists(
             Playlist.title,
             Playlist.thumbnail,
             Playlist.check_every_day,
-            Playlist.folder,
             Playlist.last_published,
             Playlist.uploader_id,
             videos_count,
@@ -78,11 +77,8 @@ async def get_playlists(
             "title": row.title,
             "thumbnail": row.thumbnail,
             "check_every_day": row.check_every_day,
-            "folder": row.folder,
             "last_published": row.last_published,
             "uploader_id": row.uploader_id,
-            # "videos_count": row.videos_count,
-            # "downloaded_count": row.downloaded_count,
             "missing_count": row.missing_count,
         }
         for row in playlists if row.source_id != 0
@@ -149,18 +145,6 @@ async def add_playlist(playlist_id: str, db: AsyncSession = Depends(get_db)):
     existing_playlist = result.scalars().first()
     if existing_playlist:
         return {"message": "Playlist already exists", "error": True}
-
-    # # Create a new playlist instance
-    # new_playlist = Playlist(
-    #     source_id=playlist_id,
-    #     title=playlist_id + "...",
-    # )
-
-    # # Add the new playlist to the database
-    # db.add(new_playlist)
-    # await db.commit()
-
-    # print("Playlist committed")
 
     # Start background task to fetch full playlist details
     asyncio.create_task(fetch_full_playlist(playlist_id))
@@ -253,6 +237,7 @@ async def get_playlist_details(
         "id": playlist.source_id,
         "title": playlist.title,
         "folder": playlist.folder,
+        "download_path": playlist.download_path,
         "last_published": playlist.last_published,
         "thumbnail": playlist.thumbnail,
         "check_every_day": playlist.check_every_day,

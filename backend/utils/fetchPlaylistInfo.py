@@ -10,6 +10,8 @@ from utils.sanitize import sanitize_title
 from utils.download_uploader_avatar import download_uploader_avatar
 from utils.youtube_api import get_playlist_info, get_playlist_items, get_video_details
 
+from typing import cast
+
 
 fetching = {}
 
@@ -129,14 +131,17 @@ async def fetch_and_store_playlist_info(playlist_id, db: AsyncSession):
             print("Created default root folder:", root_folder.path)
 
         # Create new playlist if it doesn't exist
+        playlist_title = sanitize_title(playlist_info.get("title"))
+        uploader_name = cast(str, uploader.name).replace("/", "-") if uploader else "Unknown"
         playlist = Playlist(
             source_id=playlist_info.get("id"),
-            title=sanitize_title(playlist_info.get("title")),
+            title=playlist_title,
             description=playlist_info.get("description"),
             thumbnail=first_entry.get("thumbnail"),
             uploader_id=uploader.id if uploader else None,
             last_published=last_published,
             folder=root_folder.path,
+            download_path=f"{uploader_name}/{playlist_title}",
         )
         db.add(playlist)
         await db.flush() # Flush to get the playlist ID

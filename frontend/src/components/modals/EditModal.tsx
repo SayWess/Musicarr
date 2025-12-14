@@ -28,6 +28,7 @@ const EditModal = ({ isEditOpen, closeEdit, playlist }: EditModalProps) => {
   const [formData, setFormData] = useState({
     title: playlist.title,
     folder: playlist.folder,
+    download_path: playlist.download_path,
     check_every_day: playlist.check_every_day,
     default_format: playlist.default_format,
     default_quality: qualityKey || "q_best",
@@ -38,6 +39,7 @@ const EditModal = ({ isEditOpen, closeEdit, playlist }: EditModalProps) => {
     setFormData({
       title: playlist.title,
       folder: playlist.folder,
+      download_path: playlist.download_path,
       check_every_day: playlist.check_every_day,
       default_format: playlist.default_format,
       default_quality: qualityKey || "q_best",
@@ -48,6 +50,7 @@ const EditModal = ({ isEditOpen, closeEdit, playlist }: EditModalProps) => {
   const [validationError, setValidationError] = useState<{
     title?: string;
     folder?: string;
+    download_path?: string;
   }>({});
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
@@ -65,10 +68,7 @@ const EditModal = ({ isEditOpen, closeEdit, playlist }: EditModalProps) => {
       }
     }
 
-    if (name === "folder") {
-      // if (!value.startsWith("/")) {
-      //   error = "Le chemin du dossier doit commencer par '/'.";
-      // }
+    if (name === "folder" || name === "download_path") {
       if (/[<>:"\\|?*\x00-\x1F]/.test(value)) {
         error = "Le dossier contient des caractères invalides.";
         newValue = newValue.replace(/[<>:"\\|?*\x00-\x1F]/g, "");
@@ -89,6 +89,7 @@ const EditModal = ({ isEditOpen, closeEdit, playlist }: EditModalProps) => {
   const saveEdits = async () => {
     formData.title = formData.title.trim();
     formData.folder = formData.folder.trim();
+    formData.download_path = formData.download_path.trim();
 
     if (!paths.some((p) => p.path === formData.folder)) {
       setValidationError((prev) => ({
@@ -97,7 +98,7 @@ const EditModal = ({ isEditOpen, closeEdit, playlist }: EditModalProps) => {
       }));
       return;
     }
-    
+
     try {
       const response = await fetch(`${endpointPlaylists}/${playlist.id}`, {
         method: "PUT",
@@ -165,7 +166,7 @@ const EditModal = ({ isEditOpen, closeEdit, playlist }: EditModalProps) => {
               </div>
               <div>
                 <label htmlFor="folder" className="block text-md font-bold text-[goldenrod]">
-                  Folder
+                  Root Folder
                 </label>
 
                 {loadingPaths ? (
@@ -191,6 +192,23 @@ const EditModal = ({ isEditOpen, closeEdit, playlist }: EditModalProps) => {
 
                 {validationError.folder && (
                   <p className="text-sm text-red-500 mt-1">{validationError.folder}</p>
+                )}
+              </div>
+
+              <div>
+                <label htmlFor="download_path" className="block text-md font-bold text-[goldenrod]">
+                  Download Path
+                </label>
+                <input
+                  id="download_path"
+                  type="text"
+                  name="download_path"
+                  value={formData.download_path || ""}
+                  onChange={handleChange}
+                  className="w-full p-2 border rounded focus:ring focus:ring-blue-300"
+                />
+                {validationError.download_path && (
+                  <p className="text-sm text-red-500 mt-1">{validationError.download_path}</p>
                 )}
               </div>
 
