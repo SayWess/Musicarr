@@ -26,6 +26,8 @@ import SelectingBar from "./SelectingBar";
 import { useLongClickHandlers } from "@/hooks/useLongClick";
 import { OptionsFloatingMenu } from "../floating-options/OptionsFloatingMenu";
 import { SelectionModeButton } from "../floating-options/SelectionModeButton";
+import { useModal } from "../modals/Modal";
+import { CustomVideoModal } from "../modals/CustomVideoModal";
 
 interface PlaylistDetailsProps {
   id: string;
@@ -38,7 +40,21 @@ export default function VideosDetails(props: PlaylistDetailsProps) {
   const { id, initialPlaylist, initialSortBy, initialSortOrder } = props;
   const [currentSortBy, setSortBy] = useState<SortField>(initialSortBy);
   const [currentSortOrder, setSortOrder] = useState<SortOrder>(initialSortOrder);
+  const { isOpen: isEditModalOpen, openModal: openEditModal, closeModal: closeEditModal } = useModal();
+  // Add state to track which video's modal is open
+  const [selectedVideoId, setSelectedVideoId] = useState<string | null>(null);
 
+  const handleOpenEditModal = (videoId: string) => {
+    setSelectedVideoId(videoId);
+    openEditModal();
+  };
+
+  const handleCloseEditModal = () => {
+    setSelectedVideoId(null);
+    mutate(`${endpointPlaylists}/${id}/details`); // Refresh playlist details after closing modal, trigger even if nothing is changed
+    closeEditModal();
+  };
+  
   const fetcher = (url: string) => {
     return axios.get(url + `?sort_by=${currentSortBy}&order=${currentSortOrder}`).then((res) => res.data);
   };
@@ -367,11 +383,21 @@ export default function VideosDetails(props: PlaylistDetailsProps) {
                 download_stage={getDownloadStage(video.id)}
                 onDownload={handleVideoDownload}
                 openThumbnailModal={openThumbnailModal}
+                openEditModal={() => handleOpenEditModal(video.id)}
                 isSelected={selectedVideos.includes(video.id)}
                 isSelectable={isSelecting && video.available !== false}
               />
             </div>
           ))}
+
+          {selectedVideoId && (
+            <CustomVideoModal
+              isOpen={!!selectedVideoId}
+              closeModal={handleCloseEditModal}
+              videoId={selectedVideoId!}
+              playlistId={playlist.id}
+            />
+          )}
         </div>
       </div>
     </div>
