@@ -291,7 +291,7 @@ export default function PlaylistDetails(props: PlaylistDetailsProps) {
 
             <div className="flex items-center gap-2" style={{ maxWidth: "inherit" }}>
               <FolderDown size={16} className="min-w-fit" />
-              Folder: <span className="bg-gray-700 px-2 truncate rounded">{playlist.folder}</span>
+              Folder: <span className="bg-gray-700 px-2 truncate rounded">{playlist.folder}/{playlist.download_path}</span>
             </div>
 
             <NumberOfVideosDownloaded playlist_id={playlist.id} />

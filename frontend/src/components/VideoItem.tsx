@@ -7,7 +7,7 @@ import { endpointPlaylists } from "@/constants/endpoints";
 import { formatDate } from "@/utils/formatDate";
 import { fetcher } from "@/utils/fetcher";
 import React from "react";
-import { CheckCircle2 } from "lucide-react";
+import { CheckCircle2, Pencil } from "lucide-react";
 import { copyUrlToClipboard } from "@/utils/copyToClipboard";
 
 type VideoItemProps = {
@@ -17,6 +17,7 @@ type VideoItemProps = {
   download_stage: string;
   onDownload: (videoId: string) => void;
   openThumbnailModal: (url: string) => void;
+  openEditModal?: () => void;
   isSelected?: boolean;
   isSelectable?: boolean;
 };
@@ -28,18 +29,15 @@ export const VideoItem = ({
   download_stage,
   onDownload,
   openThumbnailModal,
+  openEditModal,
   isSelected = false,
-  isSelectable = false
+  isSelectable = false,
 }: VideoItemProps) => {
-
   const {
     data: download_status,
     error,
     isLoading,
-  } = useSWR(
-    `${endpointPlaylists}/${playlist_id}/videos/${video.id}/download_status`,
-    fetcher
-  );
+  } = useSWR(`${endpointPlaylists}/${playlist_id}/videos/${video.id}/download_status`, fetcher);
   const isDownloaded = download_status?.status === "DOWNLOADED";
   const downloading = download_status?.status === "DOWNLOADING";
   const isError = download_status?.status === "ERROR";
@@ -63,36 +61,57 @@ export const VideoItem = ({
         width={120}
         height={68}
         className="rounded-md h-auto w-20 md:w-auto max-w-[130px] shadow-md aspect-video object-cover cursor-zoom-in transition-all duration-300 hover:shadow-xl hover:scale-[1.05]"
-        onClick={(e) => {openThumbnailModal(video.thumbnail); e.preventDefault(); e.stopPropagation();}}
+        onClick={(e) => {
+          openThumbnailModal(video.thumbnail);
+          e.preventDefault();
+          e.stopPropagation();
+        }}
         priority={true}
       />
 
       <div className="ml-4 flex-1">
-        <h3 className="text-xs md:text-lg font-semibold line-clamp-2 w-fit cursor-pointer" onClick={() => copyUrlToClipboard(video.id)}>
+        <h3
+          className="text-xs md:text-lg font-semibold line-clamp-2 w-fit cursor-pointer"
+          onClick={() => copyUrlToClipboard(video.id)}
+        >
           {video.title}
         </h3>
 
         <p className="text-gray-400 text-xs md:text-sm mt-1">
           ⏳ {video.duration || "00:00"} • 📺 {video.quality || "Default"}
         </p>
-        <p className="text-gray-500 text-xs mt-1">
-          Published: {formatDate(video.upload_date)}
-        </p>
+        <p className="text-gray-500 text-xs mt-1">Published: {formatDate(video.upload_date)}</p>
       </div>
 
-      {(downloading || !isSelectable) && <VideoStatus
-        video={video}
-        progress={progress}
-        download_stage={download_stage}
-        onDownload={onDownload}
-        download_status={download_status?.status}
-        error={error}
-        isLoading={isLoading}
-      />}
+      {(downloading || !isSelectable) && (
+        <VideoStatus
+          video={video}
+          progress={progress}
+          download_stage={download_stage}
+          onDownload={onDownload}
+          download_status={download_status?.status}
+          error={error}
+          isLoading={isLoading}
+        />
+      )}
 
       {!downloading && isSelectable && (
         <div className="text-blue-400 z-10">
-          {isSelected ? <CheckCircle2 size={24} /> : <div className="w-6 h-6 rounded-full border border-gray-500" />}
+          <button
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              openEditModal?.();
+            }}
+            className="flex mb-4 px-1 py-1 bg-yellow-600 text-white rounded hover:bg-yellow-700 transition"
+          >
+            <Pencil size={15} className="" /> <span className="sm:inline hidden"></span>
+          </button>
+          {isSelected ? (
+            <CheckCircle2 size={24} />
+          ) : (
+            <div className="w-6 h-6 rounded-full border border-gray-500" />
+          )}
         </div>
       )}
     </div>

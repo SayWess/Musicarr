@@ -72,6 +72,8 @@ class Playlist(Item):
     default_quality = Column(Enum(DownloadQuality), nullable=True, default=DownloadQuality.q_best)  # e.g., "1080p", "720p", "best"
     default_subtitles = Column(Boolean, default=False)  # Whether to download subtitles
 
+    download_path = Column(String, nullable=False, server_default="") # server_default to avoid issues when updating existing rows
+
     # ForeignKey to Uploader
     uploader_id = Column(UUID(as_uuid=True), ForeignKey("uploaders.id"), nullable=True)
     uploader = relationship("Uploader", back_populates="playlists")
@@ -110,6 +112,7 @@ class PlaylistVideo(Base):
     # Custom title & download location per playlist
     custom_title = Column(String, nullable=True)  # Allows renaming per playlist
     custom_folder = Column(String, nullable=True)  # Allows different storage locations
+    custom_download_path = Column(String, nullable=True) # Custom path format per video
 
     playlist = relationship("Playlist", back_populates="videos", passive_deletes=True)
     video = relationship("Video", back_populates="playlists")
@@ -131,11 +134,11 @@ class GlobalPreferences(Base):
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     update_playlist_title = Column(Boolean, default=True)
-    update_playlist_uploader = Column(Boolean, default=True)
+    update_playlist_uploader = Column(Boolean, default=False)
     update_playlist_description = Column(Boolean, default=True)
     update_playlist_thumbnail = Column(Boolean, default=True)
 
     update_video_title = Column(Boolean, default=True)
-    update_video_uploader = Column(Boolean, default=True)
+    update_video_uploader = Column(Boolean, default=False)
     update_video_description = Column(Boolean, default=True)
     update_video_thumbnail = Column(Boolean, default=True)

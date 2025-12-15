@@ -42,7 +42,6 @@ async def get_playlists(
             Playlist.title,
             Playlist.thumbnail,
             Playlist.check_every_day,
-            Playlist.folder,
             Playlist.last_published,
             Playlist.uploader_id,
             videos_count,
@@ -78,11 +77,8 @@ async def get_playlists(
             "title": row.title,
             "thumbnail": row.thumbnail,
             "check_every_day": row.check_every_day,
-            "folder": row.folder,
             "last_published": row.last_published,
             "uploader_id": row.uploader_id,
-            # "videos_count": row.videos_count,
-            # "downloaded_count": row.downloaded_count,
             "missing_count": row.missing_count,
         }
         for row in playlists if row.source_id != 0
@@ -149,18 +145,6 @@ async def add_playlist(playlist_id: str, db: AsyncSession = Depends(get_db)):
     existing_playlist = result.scalars().first()
     if existing_playlist:
         return {"message": "Playlist already exists", "error": True}
-
-    # # Create a new playlist instance
-    # new_playlist = Playlist(
-    #     source_id=playlist_id,
-    #     title=playlist_id + "...",
-    # )
-
-    # # Add the new playlist to the database
-    # db.add(new_playlist)
-    # await db.commit()
-
-    # print("Playlist committed")
 
     # Start background task to fetch full playlist details
     asyncio.create_task(fetch_full_playlist(playlist_id))
@@ -241,7 +225,7 @@ async def get_playlist_details(
 
     # Fetch related videos correctly
     videos_result = await db.execute(
-        select(Video, PlaylistVideo.state)
+        select(Video, PlaylistVideo.state, PlaylistVideo.custom_title)
         .join(PlaylistVideo, PlaylistVideo.video_id == Video.id)
         .where(PlaylistVideo.playlist_id == playlist.id)
         .order_by(sort_expression)
@@ -253,6 +237,7 @@ async def get_playlist_details(
         "id": playlist.source_id,
         "title": playlist.title,
         "folder": playlist.folder,
+        "download_path": playlist.download_path,
         "last_published": playlist.last_published,
         "thumbnail": playlist.thumbnail,
         "check_every_day": playlist.check_every_day,
@@ -267,13 +252,13 @@ async def get_playlist_details(
         "videos": [
             {
                 "id": video.source_id,
-                "title": video.title,
+                "title": custom_title or video.title,
                 "thumbnail": video.thumbnail,
                 "duration": video.duration,
                 "upload_date": video.upload_date,
                 "available": video.available,
             }
-            for video, state in videos
+            for video, state, custom_title in videos
         ]
     }
 
@@ -454,3 +439,82 @@ async def get_video_download_status(playlist_id: str, video_id: str, db: AsyncSe
         "playlist_id": playlist_id
     }
 
+
+
+@router.get("/{playlist_id}/videos/{video_id}")
+async def get_playlist_video_info(playlist_id: str, video_id: str, db: AsyncSession = Depends(get_db)):
+    """
+    Return video info in a playlist by its ID
+    """
+    result = await db.execute(select(Playlist).where(Playlist.source_id == playlist_id))
+    playlist = result.scalars().first()
+    if not playlist:
+        print("Playlist not found")
+        raise HTTPException(status_code=404, detail="Playlist not found")
+    
+    result = await db.execute(select(Video).where(Video.source_id == video_id))
+    video = result.scalars().first()
+    if not video:
+        print("Video not found")
+        raise HTTPException(status_code=404, detail="Video not found")
+
+    result = await db.execute(
+        select(PlaylistVideo)
+        .where(PlaylistVideo.playlist_id == playlist.id, PlaylistVideo.video_id == video.id)
+    )
+    playlist_video = result.scalars().first()
+
+    if not playlist_video:
+        print("Video not found in the playlist")
+        raise HTTPException(status_code=404, detail="Video not found in the playlist")
+
+    return {
+        "video_id": video.source_id,
+        "custom_title": playlist_video.custom_title or video.title,
+        "custom_download_path": playlist_video.custom_download_path,
+        "quality": playlist_video.quality,
+        "subtitles": playlist_video.subtitles,
+    }
+
+
+@router.put("/{playlist_id}/videos/{video_id}")
+async def update_playlist_video(playlist_id: str, video_id: str, attributes_updated: dict, db: AsyncSession = Depends(get_db)):
+    """
+    Mettre à jour une vidéo d'une playlist par son id
+    """
+    result = await db.execute(select(Playlist).where(Playlist.source_id == playlist_id))
+    playlist = result.scalars().first()
+    if not playlist:
+        raise HTTPException(status_code=404, detail="Playlist not found")
+    
+    result = await db.execute(select(Video).where(Video.source_id == video_id))
+    video = result.scalars().first()
+    if not video:
+        raise HTTPException(status_code=404, detail="Video not found")
+
+    result = await db.execute(
+        select(PlaylistVideo)
+        .where(PlaylistVideo.playlist_id == playlist.id, PlaylistVideo.video_id == video.id)
+    )
+    playlist_video = result.scalars().first()
+
+    if not playlist_video:
+        raise HTTPException(status_code=404, detail="Video not found in the playlist")
+
+    # Update the playlist video fields
+    for key, value in attributes_updated.items():
+        if key == "custom_title" and value == video.title:
+            value = None  # Reset to None if the custom title is the same as the original title
+        
+        setattr(playlist_video, key, value)
+    
+    # Commit the changes to the database
+    await db.commit()
+
+    await ws_manager.send_message("playlists", {
+        "playlist_id": playlist.source_id,
+        "video_id": video.source_id,
+        "options_updated": True
+    })
+
+    return {"message": f"Playlist video updated", "video_id": video.source_id}

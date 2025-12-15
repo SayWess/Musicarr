@@ -1,20 +1,16 @@
 import asyncio
 import re
-from database.models import Video, Playlist, DownloadFormat, Uploader
+from database.models import PlaylistVideo, Video, Playlist, DownloadFormat
 from websocket_manager import ws_manager
-from typing import cast
-
-def get_output_path(playlist: Playlist):
-    # return f"{playlist.folder}/%(uploader)s/{playlist.title}/%(title)s.%(ext)s"
-    if not playlist.uploader:
-        return f"{playlist.folder}/{playlist.title}/%(title)s.%(ext)s"
-    
-    uploader = cast(Uploader, playlist.uploader)
-    uploader_name = cast(str, uploader.name).replace("/", "-")
-    return f"{playlist.folder}/{uploader_name}/{playlist.title}/%(title)s.%(ext)s"
 
 
-async def start_download_video(playlist: Playlist, video: Video):
+def get_output_path(playlist: Playlist, video: Video, playlist_video: PlaylistVideo) -> str:
+    if playlist_video.custom_download_path:
+        return f"{playlist.folder}/{playlist_video.custom_download_path}{'/' if playlist_video.custom_download_path else ''}{playlist_video.custom_title if playlist_video.custom_title else video.title}.%(ext)s"
+    return f"{playlist.folder}/{playlist.download_path}{"/" if playlist.download_path else ""}%(title)s.%(ext)s"
+
+
+async def start_download_video(playlist: Playlist, video: Video, playlist_video: PlaylistVideo):
     try:
         command = [
             "yt-dlp",
@@ -23,7 +19,7 @@ async def start_download_video(playlist: Playlist, video: Video):
             "--no-playlist",  # just in case
             "--embed-thumbnail",
             "--embed-metadata",
-            "-o", get_output_path(playlist),
+            "-o", get_output_path(playlist, video, playlist_video),
         ]
 
         if playlist.default_format == DownloadFormat.AUDIO:

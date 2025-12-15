@@ -60,7 +60,7 @@ async def start_download_single_video(playlist_id: str, video_id: str, db: Async
     })
 
     try:
-        success, stderr = await start_download_video(playlist, video)
+        success, stderr = await start_download_video(playlist, video, playlist_video=playlist_video)
     except Exception as e:
         print(f"Error downloading video {video.title}: {e}")
         success = None
