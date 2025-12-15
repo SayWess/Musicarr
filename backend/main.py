@@ -13,8 +13,8 @@ from utils.constants import METADATA_STORAGE_PATH
 init_folders()  # Initialize necessary folders
 
 scheduler = AsyncIOScheduler()
-scheduler.add_job(update_playlists_info_job, CronTrigger(day_of_week="sun", hour=0, minute=0))
-scheduler.add_job(update_playlists_downloads_job, CronTrigger(day_of_week="mon", hour=0, minute=0))
+scheduler.add_job(update_playlists_info_job, CronTrigger(day_of_week="sun,wed", hour=0, minute=0))
+scheduler.add_job(update_playlists_downloads_job, CronTrigger(day_of_week="0-6", hour=0, minute=0))
 
 # Ensure the scheduler shuts down properly on application exit.
 @asynccontextmanager
