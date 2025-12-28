@@ -1,0 +1,14 @@
+**/Dockerfile
+**/.dockerignore
+**/__pycache__
+**/venv
+**/README.md
+**/.env*
+**/.git
+**/.gitignore
+**/downloads/*
+**/metadata/avatar/*
+**/Media
+**/node_modules
+**/npm-debug.log
+**/.next

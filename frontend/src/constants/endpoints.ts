@@ -20,7 +20,7 @@ const endpointWebSocketVideos = endpointWebSocket + "/videos";
 const endpointWebSocketUploaders = endpointWebSocket + "/uploaders";
 
 // Static metadata
-const endpointUploadersAvatar = backendHost + "/metadata/avatars";
+const endpointUploadersAvatar = "/metadata/avatars";
 
 // Export all endpoints
 export {

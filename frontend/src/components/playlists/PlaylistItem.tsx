@@ -158,6 +158,7 @@ export const PlaylistItem = ({
              bg-gray-800 shadow-md`}
               src={avatarUrl}
               onError={() => setAvatarError(true)}
+              unoptimized
               width={64}
               height={64}
               priority

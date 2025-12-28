@@ -8,6 +8,7 @@ on:
 env:
   IMAGE_FRONTEND_NAME: ghcr.io/saywess/musicarr-frontend
   IMAGE_BACKEND_NAME: ghcr.io/saywess/musicarr-backend
+  IMAGE_MUSICARR_NAME: ghcr.io/saywess/musicarr
 
 jobs:
   build-and-push:
@@ -64,9 +65,21 @@ jobs:
           # cache-from: type=registry,ref=${{ env.IMAGE_BACKEND_NAME }}:buildcache
           # cache-to: type=registry,ref=${{ env.IMAGE_BACKEND_NAME }}:buildcache,mode=max
 
+      - name: Build & push frontend and backend in one container
+        uses: docker/build-push-action@v6
+        with:
+          context: ./
+          file: ./Dockerfile
+          push: true
+          tags: |
+            ${{ env.IMAGE_MUSICARR_NAME }}:latest
+            ${{ env.IMAGE_MUSICARR_NAME }}:${{ steps.vars.outputs.VERSION }}
+          # cache-from: type=registry,ref=${{ env.IMAGE_MUSICARR_NAME }}:buildcache
+          # cache-to: type=registry,ref=${{ env.IMAGE_MUSICARR_NAME }}:buildcache,mode=max
+
       - name: Pin production compose to release version
         run: |
-          cp docker-compose.prod.yaml docker-compose.prod.tmp.yaml
+          cp .docker-compose.prod.yaml docker-compose.prod.tmp.yaml
           sed -i "s|musicarr-frontend:latest|musicarr-frontend:${{ steps.vars.outputs.VERSION }}|g" docker-compose.prod.tmp.yaml
           sed -i "s|musicarr-backend:latest|musicarr-backend:${{ steps.vars.outputs.VERSION }}|g" docker-compose.prod.tmp.yaml
           mv docker-compose.prod.tmp.yaml docker-compose.yaml
@@ -75,10 +88,21 @@ jobs:
         run: |
           zip -j musicarr-${{ steps.vars.outputs.VERSION }}.zip docker-compose.yaml nginx/nginx.conf 
 
+      - name: Pin production compose to release version
+        run: |
+          cp .docker-compose.one_container.yaml docker-compose.one_container.tmp.yaml
+          sed -i "s|musicarr:latest|musicarr:${{ steps.vars.outputs.VERSION }}|g" docker-compose.one_container.tmp.yaml
+          mv docker-compose.one_container.tmp.yaml docker-compose.yaml
+
+      - name: Zip production deployment files
+        run: |
+          zip -j musicarr-one_container-${{ steps.vars.outputs.VERSION }}.zip docker-compose.yaml nginx/nginx_one_container.conf 
+
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
           files: |
             musicarr-${{ steps.vars.outputs.VERSION }}.zip
+            musicarr-one_container-${{ steps.vars.outputs.VERSION }}.zip
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
