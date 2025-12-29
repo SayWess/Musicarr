@@ -170,12 +170,12 @@ export const PlaylistUploaderModal = ({
                 <div className="relative">
                   <Image
                     src={avatarUrl}
+                    unoptimized
                     onError={() => setAvatarError(true)}
                     width={500}
                     height={500}
                     className="rounded-full h-auto w-[64px] sm:w-[128px] shadow-md"
                     priority
-                    quality={100}
                     alt={uploader.name ?? "Uploader avatar"}
                     onClick={refreshAvatar}
                   />

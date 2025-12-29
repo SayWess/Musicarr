@@ -14,7 +14,7 @@ export default function GlobalPreferences() {
 
   async function fetchGlobalPreferences() {
     try {
-      const res = await axios.get<GlobalPreferencesInterface>(`${endpointGlobalPreferences}/`);
+      const res = await axios.get<GlobalPreferencesInterface>(`${endpointGlobalPreferences}`);
       setPrefs(res.data);
     } catch (error) {
       console.error("Error fetching global preferences:", error);
