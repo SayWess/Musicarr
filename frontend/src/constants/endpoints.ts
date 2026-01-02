@@ -20,7 +20,7 @@ const endpointWebSocketVideos = endpointWebSocket + "/videos";
 const endpointWebSocketUploaders = endpointWebSocket + "/uploaders";
 
 // Static metadata
-const endpointUploadersAvatar = "/metadata/avatars";
+const endpointUploadersAvatar = (process.env.NEXT_PUBLIC_DEV ? process.env.NEXT_PUBLIC_API_URL : "") + "/metadata/avatars";
 
 // Export all endpoints
 export {

@@ -1,4 +1,5 @@
 @import "tailwindcss";
+@import "@heroui/styles"; 
 
 :root {
   --color-red-300: oklch(0.808 0.114 19.571);

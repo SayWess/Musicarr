@@ -8,7 +8,7 @@ import { VideoDetails, DownloadQuality, PlaylistDetails as PlaylistDetailsInterf
 import axios from "axios";
 import { endpointPlaylists, endpointWebSocketPlaylists } from "@/constants/endpoints";
 import useDownloadProgress from "@/hooks/useDownloadProgress";
-import { VideoItem } from "@/components/VideoItem";
+import { VideoItem } from "@/components/videos/VideoItem";
 import { useWebSocket } from "@/hooks/useWebSocket";
 import { useState } from "react";
 import { useEffect } from "react";
@@ -25,6 +25,7 @@ import PlaylistUploader from "./PlaylistUploader";
 import { COOKIE_KEY_VIDEOS } from "@/constants/cookies_keys";
 import { copyUrlToClipboard } from "@/utils/copyToClipboard";
 import { OptionsFloatingMenu } from "../floating-options/OptionsFloatingMenu";
+import { PlaylistDetailsSkeleton } from "../skeletons/PlaylistDetailsSkeleton";
 
 interface PlaylistDetailsProps {
   id: string;
@@ -197,11 +198,7 @@ export default function PlaylistDetails(props: PlaylistDetailsProps) {
   };
 
   if (isLoading) {
-    return (
-      <div className="flex items-center justify-center h-screen">
-        <p className="text-gray-400 text-lg animate-pulse">Loading playlist...</p>
-      </div>
-    );
+    return <PlaylistDetailsSkeleton />
   }
 
   if (error || !playlist) {

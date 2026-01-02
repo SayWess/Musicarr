@@ -13,6 +13,7 @@ import { OptionsFloatingMenu } from "@/components/floating-options/OptionsFloati
 import { endpointPlaylists } from "@/constants/endpoints";
 import { VALID_SORT_FIELDS_PLAYLISTS, SortField, SortOrder } from "@/constants/sortFields";
 import { COOKIE_KEY_PLAYLISTS } from "@/constants/cookies_keys";
+import { PlaylistItemSkeleton } from "../skeletons/PlaylistItemSkeleton";
 
 interface PlaylistsProps {
   initialPlaylists: Playlist[];
@@ -50,14 +51,6 @@ export default function Playlists(props: PlaylistsProps) {
       cookie_key: COOKIE_KEY_PLAYLISTS,
     },
   };
-
-  if (isLoading) {
-    return (
-      <div className="flex items-center justify-center h-screen">
-        <p className="text-gray-400 text-lg animate-pulse">Loading playlists...</p>
-      </div>
-    );
-  }
 
   if (isError) {
     return (
@@ -100,7 +93,7 @@ export default function Playlists(props: PlaylistsProps) {
         <AddItem />
       </OptionsFloatingMenu>
 
-      <motion.div
+      {/* <motion.div
         layout
         variants={{
           show: { transition: { staggerChildren: 0.05 } },
@@ -109,32 +102,41 @@ export default function Playlists(props: PlaylistsProps) {
         initial="hidden"
         animate="show"
         style={isGridSmall ? styles.grid_small : styles.grid}
-      >
-        <AnimatePresence mode="popLayout">
-          {playlists.map((playlist: Playlist) => (
-            <motion.div
-              key={playlist.id}
-              layout
-              layoutId={`playlist-${playlist.id}`}
-              variants={{
-                hidden: { opacity: 0 },
-                show: { opacity: 1 },
-              }}
-              initial="hidden"
-              animate="show"
-              exit="hidden"
-              transition={{ duration: 1 }}
-              style={{ willChange: "transform, opacity" }}
-            >
-              <PlaylistItem
-                playlist={playlist}
-                toggleCheckEveryDay={toggleCheckEveryDay}
-                isGridSmall={isGridSmall}
-              />
-            </motion.div>
+      > */}
+      <div style={isGridSmall ? styles.grid_small : styles.grid}>
+        {isLoading &&
+          Array.from({ length: 10 }).map((_, i) => (
+            <PlaylistItemSkeleton key={i} isGridSmall={isGridSmall} />
           ))}
-        </AnimatePresence>
-      </motion.div>
+
+        {/* <AnimatePresence mode="popLayout"> */}
+          {!isLoading &&
+            playlists.map((playlist: Playlist) => (
+              // <motion.div
+              //   key={playlist.id}
+              //   layout
+              //   layoutId={`playlist-${playlist.id}`}
+              //   variants={{
+              //     hidden: { opacity: 0 },
+              //     show: { opacity: 1 },
+              //   }}
+              //   initial="hidden"
+              //   animate="show"
+              //   exit="hidden"
+              //   transition={{ duration: 1 }}
+              //   style={{ willChange: "transform, opacity" }}
+              // >
+                <PlaylistItem
+                  key={playlist.id}
+                  playlist={playlist}
+                  toggleCheckEveryDay={toggleCheckEveryDay}
+                  isGridSmall={isGridSmall}
+                />
+              // </motion.div>
+            ))}
+        {/* </AnimatePresence> */}
+      {/* </motion.div> */}
+      </div>
     </div>
   );
 }

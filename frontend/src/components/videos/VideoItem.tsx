@@ -1,7 +1,7 @@
 "use client";
 import Image from "next/image";
 import { VideoDetails } from "@/types/models";
-import VideoStatus from "./buttons/VideoStatus";
+import VideoStatus from "../buttons/VideoStatus";
 import useSWR from "swr";
 import { endpointPlaylists } from "@/constants/endpoints";
 import { formatDate } from "@/utils/formatDate";
