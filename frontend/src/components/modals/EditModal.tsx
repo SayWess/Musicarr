@@ -158,7 +158,7 @@ const EditModal = ({ isEditOpen, closeEdit, playlist }: EditModalProps) => {
                   name="title"
                   value={formData.title || ""}
                   onChange={handleChange}
-                  className="w-full p-2 border rounded focus:ring focus:ring-blue-300"
+                  className="w-full p-2 border ring rounded focus:ring-blue-300"
                 />
                 {validationError.title && (
                   <p className="text-sm text-red-500 mt-1">{validationError.title}</p>
@@ -177,7 +177,7 @@ const EditModal = ({ isEditOpen, closeEdit, playlist }: EditModalProps) => {
                     name="folder"
                     value={paths.some((p) => p.path === formData.folder) ? formData.folder : ""}
                     onChange={handleChange}
-                    className="w-full p-2 border rounded bg-gray-900 text-white"
+                    className="w-full p-2 border ring rounded bg-gray-900 text-white"
                   >
                     <option value="" disabled>
                       Select a root path
@@ -205,7 +205,7 @@ const EditModal = ({ isEditOpen, closeEdit, playlist }: EditModalProps) => {
                   name="download_path"
                   value={formData.download_path || ""}
                   onChange={handleChange}
-                  className="w-full p-2 border rounded focus:ring focus:ring-blue-300"
+                  className="w-full p-2 border ring rounded focus:ring-blue-300"
                 />
                 {validationError.download_path && (
                   <p className="text-sm text-red-500 mt-1">{validationError.download_path}</p>

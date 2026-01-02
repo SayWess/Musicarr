@@ -141,7 +141,7 @@ export const CustomVideoModal = ({ isOpen, closeModal, videoId, playlistId }: Cu
               name="custom_title"
               value={formData.custom_title || ""}
               onChange={handleChange}
-              className="w-full p-2 border rounded focus:ring focus:ring-blue-300"
+              className="w-full p-2 border rounded ring focus:ring-blue-300"
             />
             {validationError.custom_title && (
               <p className="text-sm text-red-500 mt-1">{validationError.custom_title}</p>
@@ -177,7 +177,7 @@ export const CustomVideoModal = ({ isOpen, closeModal, videoId, playlistId }: Cu
               name="custom_download_path"
               value={formData.custom_download_path || ""}
               onChange={handleChange}
-              className="w-full p-2 border rounded focus:ring focus:ring-blue-300"
+              className="w-full p-2 border rounded ring focus:ring-blue-300"
             />
             {validationError.custom_download_path && (
               <p className="text-sm text-red-500 mt-1">{validationError.custom_download_path}</p>
