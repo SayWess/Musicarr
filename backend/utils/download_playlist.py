@@ -100,7 +100,7 @@ async def start_download_playlist(playlist_id: str, db: AsyncSession, redownload
         })
 
         try:
-            success, stderr = await start_download_video(playlist, video)
+            success, stderr = await start_download_video(playlist, video, playlist_video)
         except Exception as e:
             print(f"Error downloading video {video.title}: {e}")
             success = None
